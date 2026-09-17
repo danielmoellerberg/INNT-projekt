@@ -70,5 +70,3 @@ export const PEOPLE = [
       Picture: require('../assets/IvyMoore.jpg')
     }
   ];
-  
-  

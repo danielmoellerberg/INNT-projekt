@@ -24,7 +24,7 @@ export default function ListScreen() {
                                     <View style= {GlobalStyle.textContainer}>
                                         <Text style={GlobalStyle.itemText}>{item.FullName}</Text>
                                     </View>
-                                    <View style= {GlobalStyle.textContainer}> 
+                                    <View style= {GlobalStyle.textContainer}>
                                         <Text style={GlobalStyle.itemText}>{item.JobTitle}</Text>
                                     </View>
                                     <View style= {GlobalStyle.textContainer}>

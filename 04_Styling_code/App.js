@@ -54,7 +54,7 @@ export default function App() {
 
             return <Ionicons name={iconName} size={size} color={color} />;
         },
-          
+
       })}
         >
         <Tab.Screen name="List" component={ListScreen} />
