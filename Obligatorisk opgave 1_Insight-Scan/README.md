@@ -1,84 +1,34 @@
 # Insight-Scan
 
-Individuel godkendelsesopgave – Innovation og ny teknologi (React Native / Expo).
+Obligatorisk opgave 1 – Innovation og ny teknologi
+Daniel Møller Berg
 
 ## Om appen
 
-**Insight-Scan** er en app, hvor brugeren scanner sine madkvitteringer og får indsigt i sit
-handlemønster på tværs af kæderne Netto, Rema 1000, Føtex og Lidl – samtidig med at appen
-automatisk finder cashback på udvalgte varer.
+Insight-Scan er en app hvor man scanner sine madkvitteringer. Appen viser hvor mange penge
+man har brugt i Netto, Rema 1000, Føtex og Lidl, giver cashback på udvalgte varer og viser
+en simpel indsigt i hvad man køber – fx hvor meget der går til snacks i forhold til protein.
 
-**Primært budskab:** Tjen og spar penge på det du alligevel køber.
-**Sekundært:** Få indsigt i hvad du spiser – fx hvor stor en del af budgettet der går til
-snacks kontra kød/protein, hvilket er relevant hvis man træner og holder øje med kosten.
+Hvis man ikke har scannet i 5 dage, får man en påmindelse øverst i appen. Det er tilføjet
+fordi glemsel var det største problem i min brugerundersøgelse.
 
-**Målgruppe:** Bred – folk der vil spare eller tjene penge på deres indkøb, folk der træner
-og holder øje med kosten, og studerende med et stramt madbudget.
+## Links
 
-### Sådan virker den
+- Kode på GitHub: https://github.com/danielmoellerberg/INNT-projekt/tree/main/Obligatorisk%20opgave%201_Insight-Scan
+- Demovideo: https://youtu.be/RO-e5AQCrCs
 
-1. **Overblik** – viser samlet forbrug for ugen, forbrug fordelt per kæde, optjent cashback,
-   en kort indsigt (snacks vs. protein, og hvilken kæde der er billigst per indkøb) samt en
-   liste over alle scannede kvitteringer.
-2. **Kvittering** – tryk på en kvittering i listen for at se alle varelinjer grupperet i
-   kategorier (frugt/grønt, kød/protein, mejeri, snacks, drikkevarer, andet). Varer der har
-   udløst cashback er markeret med et gult mærke.
-3. **Scan** – knappen "Scan kvittering" simulerer et AI-udtræk af en kvittering: der er en kort
-   indlæsning, hvorefter en ny kvittering tilføjes, varerne matches mod cashback-tilbuddene,
-   beløbet lægges til saldoen, og appen navigerer tilbage til overblikket.
-4. **Cashback** – viser brugerens cashback-saldo og en liste over aktuelle tilbud, inkl. om
-   brugeren allerede har købt den pågældende vare.
+## Sådan starter du appen
 
-Data er mock-data (`data/const.js`) – appen har ingen backend, og kvitteringer gemmes kun i
-appens hukommelse, mens den kører.
+1. Åbn en terminal i mappen
+2. Kør `npm install`
+3. Kør `npx expo start`
+4. Scan QR-koden med Expo Go på din telefon
 
-## Sådan kører du appen
+## Skærme
 
-```bash
-cd Insight-Scan
-npm install
-npx expo start
-```
+- **Overblik** – forbrug, cashback, indsigt og liste over kvitteringer
+- **Kvittering** – tryk på en kvittering for at se varerne
+- **Scan** – tilføjer en ny kvittering (simuleret)
+- **Cashback** – din saldo og de aktuelle tilbud
 
-Scan derefter QR-koden med **Expo Go** på din telefon, eller tryk `i` / `a` i terminalen for
-at åbne appen i iOS-simulator / Android-emulator.
-
-Hvis telefonen ikke kan få forbindelse til computeren, kan du prøve:
-
-```bash
-npx expo start --tunnel
-```
-
-## Demovideo
-
-Link til demovideo: _(indsæt link her)_
-
-## Projektstruktur
-
-```
-Insight-Scan/
-├── App.js                      # Navigation (bottom tabs) + AppProvider
-├── components/
-│   ├── ButtonComponent.js      # Genbrugelig knap (primary/secondary)
-│   └── StackComponent.js       # Stack-navigation: Overblik -> Kvittering
-├── context/
-│   └── AppContext.js           # Fælles state: kvitteringer, cashback-saldo, tilbud
-├── data/
-│   └── const.js                # Mock-data: kvitteringer og cashback-tilbud
-├── screens/
-│   ├── OverblikScreen.js       # Nøgletal, indsigt og liste over kvitteringer
-│   ├── KvitteringScreen.js     # Varelinjer grupperet i kategorier
-│   ├── ScanScreen.js           # Simuleret AI-scanning af kvittering
-│   └── CashbackScreen.js       # Saldo og liste over cashback-tilbud
-└── styles/
-    └── GlobalStyle.js          # Al styling og farvepalet samlet ét sted
-```
-
-## Teknik
-
-- **Expo (SDK 57)** med React Native
-- **React Navigation** – bottom tabs med en nested stack-navigator
-- **React Context + useState** – så nye kvitteringer og cashback slår igennem i hele appen
-- **FlatList** – til lister over kvitteringer og cashback-tilbud
-- **@expo/vector-icons (Ionicons)** – ikoner i tab-baren og på scan-skærmen
-- Al styling ligger i `styles/GlobalStyle.js` – der er ingen inline-styles i skærmene
+Appen bruger mock-data, så der er ingen database. Kvitteringerne gemmes kun mens appen kører.
