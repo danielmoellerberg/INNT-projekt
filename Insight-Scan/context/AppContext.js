@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useState } from "react";
-import { KVITTERINGER, NYE_KVITTERINGER, CASHBACK_TILBUD } from "../data/const";
+import {
+  KVITTERINGER,
+  NYE_KVITTERINGER,
+  CASHBACK_TILBUD,
+  formaterDato,
+} from "../data/const";
 
 // Hjælpefunktion: hvor meget cashback giver en kvittering?
 // Vi går varerne igennem og ser om varens navn matcher et cashback-tilbud.
@@ -30,14 +35,27 @@ export function AppProvider({ children }) {
     KVITTERINGER.reduce((sum, k) => sum + beregnCashback(k, CASHBACK_TILBUD), 0)
   );
 
+  // Har brugeren lukket påmindelsesbanneret? Ligger i contexten (og ikke lokalt i banneret),
+  // så det forbliver lukket resten af sessionen - også selvom skærmen gen-renderes.
+  const [bannerLukket, setBannerLukket] = useState(false);
+
+  function lukBanner() {
+    setBannerLukket(true);
+  }
+
   // Kaldes fra ScanScreen: "scanner" en tilfældig ny kvittering,
   // lægger den øverst på listen og lægger cashbacken til saldoen.
   function scanNyKvittering() {
     const tilfældigtIndex = Math.floor(Math.random() * NYE_KVITTERINGER.length);
     const skabelon = NYE_KVITTERINGER[tilfældigtIndex];
 
-    // Vi giver kvitteringen et nyt id, så to scanninger af samme skabelon ikke får samme id
-    const nyKvittering = { ...skabelon, id: "k" + Date.now() };
+    // Vi giver kvitteringen et nyt id, så to scanninger af samme skabelon ikke får samme id,
+    // og dags dato - så påmindelsesbanneret forsvinder automatisk efter en scanning.
+    const nyKvittering = {
+      ...skabelon,
+      id: "k" + Date.now(),
+      dato: formaterDato(new Date()),
+    };
 
     // Match varerne mod cashback-tilbuddene
     const cashback = beregnCashback(nyKvittering, tilbud);
@@ -50,7 +68,9 @@ export function AppProvider({ children }) {
   }
 
   return (
-    <AppContext.Provider value={{ kvitteringer, saldo, tilbud, scanNyKvittering }}>
+    <AppContext.Provider
+      value={{ kvitteringer, saldo, tilbud, scanNyKvittering, bannerLukket, lukBanner }}
+    >
       {children}
     </AppContext.Provider>
   );

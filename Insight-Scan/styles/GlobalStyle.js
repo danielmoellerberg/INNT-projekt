@@ -96,6 +96,41 @@ export const GlobalStyle = StyleSheet.create({
     lineHeight: 20,
   },
 
+  // ---------- ScanReminderBanner ----------
+  banner: {
+    backgroundColor: Colors.accentLight,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    padding: 14,
+    marginBottom: 12,
+  },
+  bannerTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
+  bannerIkon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  bannerTekst: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textDark,
+    lineHeight: 20,
+  },
+  bannerLukKnap: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  bannerLukTekst: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: Colors.textMuted,
+  },
+
   // ---------- OverblikScreen ----------
   forbrugKort: {
     backgroundColor: Colors.primary,

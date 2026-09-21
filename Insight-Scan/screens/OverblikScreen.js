@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
 
 import ButtonComponent from "../components/ButtonComponent";
+import ScanReminderBanner from "../components/ScanReminderBanner";
 import { useApp } from "../context/AppContext";
 import { GlobalStyle } from "../styles/GlobalStyle";
 
@@ -49,6 +50,9 @@ export default function OverblikScreen({ navigation }) {
   // Den sættes ind som ListHeaderComponent, så hele skærmen scroller sammen med listen.
   const Toppen = () => (
     <View>
+      {/* Påmindelse om at scanne - vises kun hvis det er længe siden sidst */}
+      <ScanReminderBanner navigation={navigation} />
+
       {/* Nøgletal: samlet forbrug */}
       <View style={GlobalStyle.forbrugKort}>
         <Text style={GlobalStyle.forbrugEtiket}>Forbrug denne uge</Text>

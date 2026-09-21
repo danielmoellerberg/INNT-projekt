@@ -2,6 +2,32 @@
 // I en rigtig app ville disse data komme fra en database eller fra AI-udtræk af en scannet kvittering.
 // Her er de hardcodet, så appen kan demonstreres uden backend.
 
+// ---------- Dato-hjælpere ----------
+// Vi bruger formatet DD-MM-YYYY overalt i appen (fx "16-03-2026").
+
+// Laver en Date om til tekst i formatet DD-MM-YYYY
+export function formaterDato(date) {
+  const dag = String(date.getDate()).padStart(2, "0");
+  const måned = String(date.getMonth() + 1).padStart(2, "0"); // getMonth tæller fra 0
+  const år = date.getFullYear();
+  return dag + "-" + måned + "-" + år;
+}
+
+// Laver tekst i formatet DD-MM-YYYY om til en Date (kl. 00:00, så vi kan regne i hele dage)
+export function datoTilDate(datoTekst) {
+  const [dag, måned, år] = datoTekst.split("-");
+  return new Date(Number(år), Number(måned) - 1, Number(dag));
+}
+
+// Giver datoen for X dage siden som tekst.
+// Mock-kvitteringerne bruger denne, så den nyeste altid er mindst 5 dage gammel -
+// dermed vises påmindelsesbanneret altid, når appen åbnes (vigtigt for demovideoen).
+export function datoForDageSiden(antalDage) {
+  const dato = new Date();
+  dato.setDate(dato.getDate() - antalDage);
+  return formaterDato(dato);
+}
+
 // Kategorier vi bruger til at gruppere varer
 export const KATEGORIER = [
   "frugt/grønt",
@@ -17,7 +43,7 @@ export const KVITTERINGER = [
   {
     id: "k1",
     butik: "Netto",
-    dato: "16-03-2026",
+    dato: datoForDageSiden(7),
     total: 134,
     varer: [
       { navn: "Arla Skyr Vanilje", pris: 22, kategori: "mejeri" },
@@ -30,7 +56,7 @@ export const KVITTERINGER = [
   {
     id: "k2",
     butik: "Rema 1000",
-    dato: "15-03-2026",
+    dato: datoForDageSiden(8),
     total: 103,
     varer: [
       { navn: "Hakket Oksekød 8-12%", pris: 42, kategori: "kød/protein" },
@@ -43,7 +69,7 @@ export const KVITTERINGER = [
   {
     id: "k3",
     butik: "Føtex",
-    dato: "14-03-2026",
+    dato: datoForDageSiden(9),
     total: 193,
     varer: [
       { navn: "Laks", pris: 79, kategori: "kød/protein" },
@@ -56,7 +82,7 @@ export const KVITTERINGER = [
   {
     id: "k4",
     butik: "Lidl",
-    dato: "13-03-2026",
+    dato: datoForDageSiden(10),
     total: 111,
     varer: [
       { navn: "Kylling Filet", pris: 49, kategori: "kød/protein" },
@@ -69,7 +95,7 @@ export const KVITTERINGER = [
   {
     id: "k5",
     butik: "Netto",
-    dato: "12-03-2026",
+    dato: datoForDageSiden(11),
     total: 103,
     varer: [
       { navn: "Arla Skyr Vanilje", pris: 22, kategori: "mejeri" },
@@ -87,7 +113,7 @@ export const KVITTERINGER = [
 export const NYE_KVITTERINGER = [
   {
     butik: "Rema 1000",
-    dato: "11-03-2026",
+    dato: datoForDageSiden(12),
     total: 94,
     varer: [
       { navn: "Hakket Oksekød 8-12%", pris: 42, kategori: "kød/protein" },
@@ -99,7 +125,7 @@ export const NYE_KVITTERINGER = [
   },
   {
     butik: "Føtex",
-    dato: "10-03-2026",
+    dato: datoForDageSiden(13),
     total: 126,
     varer: [
       { navn: "Kalkunbryst", pris: 38, kategori: "kød/protein" },
@@ -111,7 +137,7 @@ export const NYE_KVITTERINGER = [
   },
   {
     butik: "Lidl",
-    dato: "09-03-2026",
+    dato: datoForDageSiden(14),
     total: 117,
     varer: [
       { navn: "Arla Skyr Vanilje", pris: 22, kategori: "mejeri" },
