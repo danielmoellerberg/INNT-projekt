@@ -1,0 +1,12 @@
+# Afhængigheder
+node_modules/
+
+# Hemmelige nøgler - må aldrig committes
+.env
+.env*.local
+
+# Expo-cache
+.expo/
+
+# macOS
+.DS_Store
