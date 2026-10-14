@@ -6,14 +6,26 @@
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
+
+        "profil": {
+          "rolle": {
+            ".write": "auth != null && auth.uid === $uid && !data.exists()"
+          },
+          "$felt": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        },
+
+        "$andet": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
       }
     },
 
     "offers": {
       ".read": "auth != null",
       "$offerId": {
-        ".write": "auth != null && (!data.exists() || data.child('ownerId').val() === auth.uid) && (!newData.exists() || newData.child('ownerId').val() === auth.uid)"
+        ".write": "auth != null && root.child('users').child(auth.uid).child('profil').child('rolle').val() === 'leverandoer' && (!data.exists() || data.child('ownerId').val() === auth.uid) && (!newData.exists() || newData.child('ownerId').val() === auth.uid)"
       }
     }
   }

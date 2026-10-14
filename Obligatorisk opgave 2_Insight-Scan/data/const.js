@@ -1,185 +1,150 @@
-// Mock-data til Insight-Scan.
-// I en rigtig app ville disse data komme fra en database eller fra AI-udtræk af en scannet kvittering.
-// Her er de hardcodet, så appen kan demonstreres uden backend.
+// Faste værdier og hjælpefunktioner til Insight-Scan.
+// Appens data (kvitteringer, tilbud, profil) ligger i Firebase - her ligger kun det,
+// som ikke er brugerdata: kategorier, skabeloner til den simulerede scanning og formatering.
 
-// ---------- Dato-hjælpere ----------
-// Vi bruger formatet DD-MM-YYYY overalt i appen (fx "16-03-2026").
+// ---------- Kategorier ----------
+// Nøglen gemmes i Firebase på hver vare, navnet vises i appen
+export const KATEGORI_NAVNE = {
+  "kød/protein": "Kød",
+  "frugt/grønt": "Grønt",
+  mejeri: "Mejeri",
+  snacks: "Snacks",
+  drikkevarer: "Drikkevarer",
+  andet: "Andet",
+};
 
-// Laver en Date om til tekst i formatet DD-MM-YYYY
-export function formaterDato(date) {
-  const dag = String(date.getDate()).padStart(2, "0");
-  const måned = String(date.getMonth() + 1).padStart(2, "0"); // getMonth tæller fra 0
-  const år = date.getFullYear();
-  return dag + "-" + måned + "-" + år;
-}
-
-// Laver tekst i formatet DD-MM-YYYY om til en Date (kl. 00:00, så vi kan regne i hele dage)
-export function datoTilDate(datoTekst) {
-  const [dag, måned, år] = datoTekst.split("-");
-  return new Date(Number(år), Number(måned) - 1, Number(dag));
-}
-
-// Giver datoen for X dage siden som tekst.
-// Mock-kvitteringerne bruger denne, så den nyeste altid er mindst 5 dage gammel -
-// dermed vises påmindelsesbanneret altid, når appen åbnes (vigtigt for demovideoen).
-export function datoForDageSiden(antalDage) {
-  const dato = new Date();
-  dato.setDate(dato.getDate() - antalDage);
-  return formaterDato(dato);
-}
-
-// Kategorier vi bruger til at gruppere varer
-export const KATEGORIER = [
-  "frugt/grønt",
-  "kød/protein",
-  "mejeri",
-  "snacks",
-  "drikkevarer",
-  "andet",
-];
-
-// Kvitteringer som brugeren allerede har scannet (appens startdata)
-export const KVITTERINGER = [
+// ---------- Simuleret AI-udtræk ----------
+// Indtil kameraet og AI'en er koblet på, "læser" Scan-skærmen en tilfældig af disse kvitteringer
+// (samme idé som i opgave 1). Kvitteringen gemmes derefter i Firebase med dags dato, og resten
+// af appen læser den derfra - der er altså ingen hardcodede lister i skærmene.
+// pris er linjens samlede pris; antal udelades, når der kun er købt én.
+export const KVITTERING_SKABELONER = [
   {
-    id: "k1",
     butik: "Netto",
-    dato: datoForDageSiden(7),
-    total: 134,
+    adresse: "Frederiksberg Allé",
     varer: [
-      { navn: "Arla Skyr Vanilje", pris: 22, kategori: "mejeri" },
-      { navn: "Bananer", pris: 14, kategori: "frugt/grønt" },
-      { navn: "Kylling Filet", pris: 55, kategori: "kød/protein" },
+      { navn: "Kyllingebryst 900 g", pris: 119.9, antal: 2, kategori: "kød/protein" },
+      { navn: "Arla minimælk 1 l", pris: 11.95, kategori: "mejeri" },
+      { navn: "Skyr naturel 1 kg", pris: 23.95, kategori: "mejeri" },
       { navn: "Rugbrød", pris: 18, kategori: "andet" },
-      { navn: "Kims Chips Sourcream", pris: 25, kategori: "snacks" },
+      { navn: "Bananer 1 kg", pris: 16, kategori: "frugt/grønt" },
+      { navn: "Gulerødder 1 kg", pris: 10, antal: 2, kategori: "frugt/grønt" },
+      { navn: "Kaffe 400 g", pris: 52.5, kategori: "drikkevarer" },
     ],
   },
   {
-    id: "k2",
     butik: "Rema 1000",
-    dato: datoForDageSiden(8),
-    total: 103,
+    adresse: "Gl. Kongevej",
     varer: [
-      { navn: "Hakket Oksekød 8-12%", pris: 42, kategori: "kød/protein" },
-      { navn: "Pasta", pris: 12, kategori: "andet" },
-      { navn: "Tomater", pris: 20, kategori: "frugt/grønt" },
-      { navn: "Mælk", pris: 11, kategori: "mejeri" },
-      { navn: "Coca-Cola Zero 1,5L", pris: 18, kategori: "drikkevarer" },
-    ],
-  },
-  {
-    id: "k3",
-    butik: "Føtex",
-    dato: datoForDageSiden(9),
-    total: 193,
-    varer: [
-      { navn: "Laks", pris: 79, kategori: "kød/protein" },
-      { navn: "Broccoli", pris: 15, kategori: "frugt/grønt" },
-      { navn: "Kellogg's Cornflakes", pris: 32, kategori: "andet" },
-      { navn: "Æbler", pris: 22, kategori: "frugt/grønt" },
-      { navn: "Ost", pris: 45, kategori: "mejeri" },
-    ],
-  },
-  {
-    id: "k4",
-    butik: "Lidl",
-    dato: datoForDageSiden(10),
-    total: 111,
-    varer: [
-      { navn: "Kylling Filet", pris: 49, kategori: "kød/protein" },
-      { navn: "Agurk", pris: 9, kategori: "frugt/grønt" },
-      { navn: "Yoghurt Naturel", pris: 16, kategori: "mejeri" },
-      { navn: "Chokolade", pris: 25, kategori: "snacks" },
+      { navn: "Hakket oksekød 500 g", pris: 35, kategori: "kød/protein" },
+      { navn: "Pasta penne 500 g", pris: 12.95, kategori: "andet" },
+      { navn: "Hakkede tomater", pris: 21, antal: 3, kategori: "frugt/grønt" },
+      { navn: "Revet ost", pris: 24.95, kategori: "mejeri" },
       { navn: "Danskvand", pris: 12, kategori: "drikkevarer" },
     ],
   },
   {
-    id: "k5",
-    butik: "Netto",
-    dato: datoForDageSiden(11),
-    total: 103,
-    varer: [
-      { navn: "Arla Skyr Vanilje", pris: 22, kategori: "mejeri" },
-      { navn: "Gulerødder", pris: 10, kategori: "frugt/grønt" },
-      { navn: "Æg", pris: 28, kategori: "kød/protein" },
-      { navn: "Kims Chips Sourcream", pris: 25, kategori: "snacks" },
-      { navn: "Peanuts", pris: 18, kategori: "snacks" },
-    ],
-  },
-];
-
-// Kvitteringer der "ligger klar" til at blive scannet på ScanScreen.
-// Når brugeren trykker "Scan kvittering", vælger vi en tilfældig herfra
-// og lader som om AI'en lige har læst den.
-export const NYE_KVITTERINGER = [
-  {
-    butik: "Rema 1000",
-    dato: datoForDageSiden(12),
-    total: 94,
-    varer: [
-      { navn: "Hakket Oksekød 8-12%", pris: 42, kategori: "kød/protein" },
-      { navn: "Løg", pris: 8, kategori: "frugt/grønt" },
-      { navn: "Ris", pris: 15, kategori: "andet" },
-      { navn: "Mælk", pris: 11, kategori: "mejeri" },
-      { navn: "Coca-Cola Zero 1,5L", pris: 18, kategori: "drikkevarer" },
-    ],
-  },
-  {
     butik: "Føtex",
-    dato: datoForDageSiden(13),
-    total: 126,
+    adresse: "Falkoner Allé",
     varer: [
-      { navn: "Kalkunbryst", pris: 38, kategori: "kød/protein" },
-      { navn: "Spinat", pris: 14, kategori: "frugt/grønt" },
-      { navn: "Skyr Naturel", pris: 20, kategori: "mejeri" },
-      { navn: "Kellogg's Cornflakes", pris: 32, kategori: "andet" },
-      { navn: "Juice", pris: 22, kategori: "drikkevarer" },
+      { navn: "Laks 400 g", pris: 79, kategori: "kød/protein" },
+      { navn: "Broccoli", pris: 15, kategori: "frugt/grønt" },
+      { navn: "Æbler 1 kg", pris: 22, kategori: "frugt/grønt" },
+      { navn: "Æg 10 stk.", pris: 26.25, kategori: "kød/protein" },
+      { navn: "Chips", pris: 25, kategori: "snacks" },
+      { navn: "Appelsinjuice 1 l", pris: 22, kategori: "drikkevarer" },
     ],
   },
   {
     butik: "Lidl",
-    dato: datoForDageSiden(14),
-    total: 117,
+    adresse: "Vesterbrogade",
     varer: [
-      { navn: "Arla Skyr Vanilje", pris: 22, kategori: "mejeri" },
-      { navn: "Kylling Filet", pris: 49, kategori: "kød/protein" },
-      { navn: "Peberfrugt", pris: 13, kategori: "frugt/grønt" },
-      { navn: "Kims Chips Sourcream", pris: 25, kategori: "snacks" },
-      { navn: "Danskvand", pris: 8, kategori: "drikkevarer" },
+      { navn: "Kyllingebryst 900 g", pris: 49.95, kategori: "kød/protein" },
+      { navn: "Økologiske bananer", pris: 12, kategori: "frugt/grønt" },
+      { navn: "Yoghurt naturel", pris: 16, kategori: "mejeri" },
+      { navn: "Chokolade", pris: 18, kategori: "snacks" },
     ],
   },
 ];
 
-// Cashback-tilbud. "vare" skal matche varens navn på kvitteringen,
-// så vi kan finde ud af om brugeren har købt netop den vare.
-export const CASHBACK_TILBUD = [
-  {
-    id: "c1",
-    brand: "Arla",
-    vare: "Arla Skyr Vanilje",
-    beloeb: 4,
-  },
-  {
-    id: "c2",
-    brand: "Kims",
-    vare: "Kims Chips Sourcream",
-    beloeb: 3,
-  },
-  {
-    id: "c3",
-    brand: "Danish Crown",
-    vare: "Hakket Oksekød 8-12%",
-    beloeb: 5,
-  },
-  {
-    id: "c4",
-    brand: "Coca-Cola",
-    vare: "Coca-Cola Zero 1,5L",
-    beloeb: 3,
-  },
-  {
-    id: "c5",
-    brand: "Kellogg's",
-    vare: "Kellogg's Cornflakes",
-    beloeb: 4,
-  },
+// ---------- Beløb ----------
+// Sætter punktum som tusindtalsseparator, fx "2340" -> "2.340"
+function medTusindtal(heltal) {
+  let resultat = "";
+  for (let i = 0; i < heltal.length; i++) {
+    const cifreTilbage = heltal.length - i;
+    resultat = resultat + heltal[i];
+    // Efter hvert tredje ciffer fra højre (men ikke til sidst) kommer et punktum
+    if (cifreTilbage > 1 && cifreTilbage % 3 === 1) {
+      resultat = resultat + ".";
+    }
+  }
+  return resultat;
+}
+
+// 312.5 -> "312,50 kr." (dansk komma og altid to decimaler)
+export function formaterKroner(beloeb) {
+  const [heltal, decimaler] = beloeb.toFixed(2).split(".");
+  return medTusindtal(heltal) + "," + decimaler + " kr.";
+}
+
+// 2340.4 -> "2.340" (til nøgletal uden decimaler)
+export function formaterHeltal(tal) {
+  return medTusindtal(String(Math.round(tal)));
+}
+
+// ---------- Datoer ----------
+// Kvitteringer gemmes med dato som millisekunder (Date.now()), så de er nemme at sortere
+const UGEDAGE = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
+const MAANEDER = [
+  "januar", "februar", "marts", "april", "maj", "juni",
+  "juli", "august", "september", "oktober", "november", "december",
 ];
+const MS_PER_DAG = 1000 * 60 * 60 * 24;
+
+// Midnat på samme dag, så vi kan tælle hele dage og ikke timer
+function startPaaDag(dato) {
+  return new Date(dato.getFullYear(), dato.getMonth(), dato.getDate());
+}
+
+// Hvor mange hele dage siden et tidspunkt? (0 = i dag, 1 = i går)
+export function dageSiden(ms) {
+  const iDag = startPaaDag(new Date());
+  const dengang = startPaaDag(new Date(ms));
+  return Math.round((iDag - dengang) / MS_PER_DAG);
+}
+
+// "Onsdag 14. oktober" - til hilsenen på Hjem
+export function formaterUgedagOgDato(dato) {
+  return UGEDAGE[dato.getDay()] + " " + dato.getDate() + ". " + MAANEDER[dato.getMonth()];
+}
+
+// "oktober" - til "Forbrug i oktober"
+export function maanedsNavn(dato) {
+  return MAANEDER[dato.getMonth()];
+}
+
+// Kort, relativ dato til lister: "I dag", "I går", "Mandag" eller "12. okt."
+export function formaterRelativDato(ms) {
+  const dage = dageSiden(ms);
+  const dato = new Date(ms);
+  if (dage === 0) return "I dag";
+  if (dage === 1) return "I går";
+  if (dage < 7) return UGEDAGE[dato.getDay()];
+  return dato.getDate() + ". " + MAANEDER[dato.getMonth()].slice(0, 3) + ".";
+}
+
+// "13. okt. kl. 17.42" - til kvitteringens detaljer
+export function formaterTidspunkt(ms) {
+  const dato = new Date(ms);
+  const timer = String(dato.getHours()).padStart(2, "0");
+  const minutter = String(dato.getMinutes()).padStart(2, "0");
+  return dato.getDate() + ". " + MAANEDER[dato.getMonth()].slice(0, 3) + ". kl. " + timer + "." + minutter;
+}
+
+// Er tidspunktet i den nuværende måned?
+export function erDenneMaaned(ms) {
+  const nu = new Date();
+  const dato = new Date(ms);
+  return dato.getMonth() === nu.getMonth() && dato.getFullYear() === nu.getFullYear();
+}

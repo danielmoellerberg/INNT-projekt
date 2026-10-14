@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -11,7 +11,7 @@ import { ref, onValue } from "firebase/database";
 import { auth, rtdb } from "./database/firebase";
 import AuthStack from "./components/AuthStack";
 import StackComponent from "./components/StackComponent";
-import CashbackScreen from "./screens/CashbackScreen";
+import TilbudScreen from "./screens/TilbudScreen";
 import ScanScreen from "./screens/ScanScreen";
 import MadplanScreen from "./screens/MadplanScreen";
 import ButikkerScreen from "./screens/ButikkerScreen";
@@ -22,36 +22,59 @@ import { GlobalStyle, Colors } from "./styles/GlobalStyle";
 
 const Tab = createBottomTabNavigator();
 
-// Ikon per fane: udfyldt ikon når fanen er valgt, kun kant når den ikke er
+// Ikon per fane (Ionicons, kursets mønster fra 04 og 08). Scan har sit eget ikon nedenfor.
 const FANE_IKONER = {
-  Hjem: "home",
-  Tilbud: "pricetags",
-  Scan: "scan",
-  Madplan: "restaurant",
-  Butikker: "storefront",
+  Hjem: "home-outline",
+  Tilbud: "pricetag-outline",
+  Madplan: "calendar-outline",
+  Butikker: "location-outline",
 };
 
 // Kundesiden: fem faner med Scan i midten, så den vigtigste handling er nemmest at nå.
-// Hjem-fanen indeholder en stack (Hjem -> Kvittering), derfor slås fanens egen header fra,
-// så stacken styrer headeren (mønster fra opgave 1).
+// Tab-baren er "flydende" som i Figma: den ligger ovenpå indholdet med runde ender,
+// halvgennemsigtig baggrund (Colors.glass) og skygge. Figmas baggrunds-blur kræver
+// pakken expo-blur, som ikke er brugt i kurset - den kan tilføjes senere.
 function KundeTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerStyle: GlobalStyle.header,
-        headerTitleStyle: GlobalStyle.headerTitel,
+        headerShown: false, // skærmene har deres egne store overskrifter som i Figma
         tabBarStyle: GlobalStyle.tabBar,
-        tabBarActiveTintColor: Colors.surface,
-        tabBarInactiveTintColor: Colors.primaryLight,
-        tabBarIcon: ({ focused, color, size }) => {
-          const ikon = FANE_IKONER[route.name];
-          return <Ionicons name={focused ? ikon : ikon + "-outline"} size={size} color={color} />;
-        },
+        tabBarItemStyle: GlobalStyle.tabItem,
+        tabBarIconStyle: GlobalStyle.tabIkonOmraade,
+        // Den aktive fane får en lysegrøn "pille" bag ikonet
+        tabBarIcon: ({ focused }) => (
+          <View style={[GlobalStyle.tabIkonPille, focused && GlobalStyle.tabIkonPilleAktiv]}>
+            <Ionicons
+              name={FANE_IKONER[route.name]}
+              size={22}
+              color={focused ? Colors.primary : Colors.textSecondary}
+            />
+          </View>
+        ),
+        tabBarLabel: ({ focused, children }) => (
+          <Text style={focused ? GlobalStyle.tabLabelAktiv : GlobalStyle.tabLabel}>{children}</Text>
+        ),
       })}
     >
-      <Tab.Screen name="Hjem" component={StackComponent} options={{ headerShown: false }} />
-      <Tab.Screen name="Tilbud" component={CashbackScreen} />
-      <Tab.Screen name="Scan" component={ScanScreen} options={{ title: "Scan kvittering" }} />
+      <Tab.Screen name="Hjem" component={StackComponent} />
+      <Tab.Screen name="Tilbud" component={TilbudScreen} />
+      {/* Scan er fremhævet med en grøn cirkel. Selve Scan-skærmen fylder hele skærmen,
+          så tab-baren skjules, mens man scanner. */}
+      <Tab.Screen
+        name="Scan"
+        component={ScanScreen}
+        options={{
+          tabBarStyle: GlobalStyle.tabBarSkjult,
+          tabBarIconStyle: GlobalStyle.tabScanIkonOmraade,
+          tabBarIcon: () => (
+            <View style={GlobalStyle.tabScanKnap}>
+              <Ionicons name="scan-outline" size={24} color={Colors.onPrimary} />
+            </View>
+          ),
+          tabBarLabel: ({ children }) => <Text style={GlobalStyle.tabLabelAktiv}>{children}</Text>,
+        }}
+      />
       <Tab.Screen name="Madplan" component={MadplanScreen} />
       <Tab.Screen name="Butikker" component={ButikkerScreen} />
     </Tab.Navigator>
@@ -61,9 +84,9 @@ function KundeTabs() {
 export default function App() {
   // Den bruger, der er logget ind (null = ingen er logget ind)
   const [user, setUser] = useState(null);
-  // Brugerens rolle fra profilen i databasen: "kunde" eller "leverandoer"
-  const [rolle, setRolle] = useState(null);
-  // true indtil vi ved, om nogen er logget ind, og hvilken rolle de har
+  // Brugerens profil fra databasen: { navn, rolle, email }
+  const [profil, setProfil] = useState(null);
+  // true indtil vi ved, om nogen er logget ind, og hvem de er
   const [indlaeser, setIndlaeser] = useState(true);
 
   // Lyt på login-status (mønster fra øvelse 06). Firebase kalder funktionen, når appen
@@ -73,37 +96,36 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        // Vis indlæsning, indtil rollen er hentet, så en leverandør ikke kortvarigt ser kundesiden
+        // Vis indlæsning, indtil profilen er hentet, så en leverandør ikke kortvarigt ser kundesiden
         setIndlaeser(true);
       } else {
-        setRolle(null);
+        setProfil(null);
         setIndlaeser(false);
       }
     });
     return unsubscribe; // fjern lytteren, hvis App lukkes
   }, []);
 
-  // Når en bruger er logget ind, lytter vi på brugerens profil i databasen
-  // (onValue, mønster fra øvelse 05) for at finde rollen.
+  // Når en bruger er logget ind, lytter vi på profilen i databasen (onValue, mønster fra 05).
   // Vi bruger onValue frem for at læse én gang, fordi profilen ved oprettelse først skrives
-  // lige EFTER, at brugeren er logget ind. onValue får den nye rolle med det samme.
+  // lige EFTER, at brugeren er logget ind. onValue får den med det samme, når den kommer.
   useEffect(() => {
     if (!user) return;
-    const profilRef = ref(rtdb, `users/${user.uid}/profil`);
-    const unsubscribe = onValue(profilRef, (snapshot) => {
-      const profil = snapshot.val();
-      // Findes der ingen profil endnu, behandles brugeren som kunde (standardrollen)
-      setRolle(profil && profil.rolle ? profil.rolle : "kunde");
+    const unsubscribe = onValue(ref(rtdb, `users/${user.uid}/profil`), (snapshot) => {
+      setProfil(snapshot.val() || {});
       setIndlaeser(false);
     });
     return unsubscribe; // stop med at lytte, når brugeren logger ud
   }, [user]);
 
+  // Findes der ingen rolle endnu, behandles brugeren som kunde (standardrollen)
+  const rolle = profil && profil.rolle ? profil.rolle : "kunde";
+
   // Vælg hvad der skal vises: indlæsning, login, leverandørside eller kundeside
   function visIndhold() {
     if (indlaeser) {
       return (
-        <View style={[GlobalStyle.container, GlobalStyle.centreret]}>
+        <View style={GlobalStyle.centreret}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       );
@@ -119,13 +141,13 @@ export default function App() {
 
   return (
     // SafeAreaProvider: giver skærmene besked om notch og home-indikator (mønster fra øvelse 07/08)
-    // AppProvider: fælles data til kundesidens skærme (fra opgave 1)
+    // AppProvider: fælles data fra Firebase til alle skærme (se context/AppContext.js)
     <SafeAreaProvider>
-      <AppProvider>
+      <AppProvider user={user} profil={profil}>
         <NavigationContainer>
           {visIndhold()}
-          {/* Hvid statuslinje-tekst på kundesidens farvede header, ellers mørk */}
-          <StatusBar style={user && rolle === "kunde" ? "light" : "dark"} />
+          {/* Mørk statuslinje-tekst på de lyse skærme. Scan skifter selv til lys tekst. */}
+          <StatusBar style="dark" />
         </NavigationContainer>
       </AppProvider>
     </SafeAreaProvider>

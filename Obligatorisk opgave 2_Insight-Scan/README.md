@@ -24,6 +24,18 @@ fordi glemsel var det største problem i min brugerundersøgelse.
 3. Kør `npx expo start`
 4. Scan QR-koden med Expo Go på din telefon
 
+## Testbrugere
+
+Man kan logge ind med disse to brugere:
+
+| Rolle | E-mail | Adgangskode |
+|---|---|---|
+| Kunde | testbruger@insightscan.dk | InsightTest2026! |
+| Leverandør (Nordmejeri) | testleverandoer@insightscan.dk | InsightTest2026! |
+
+Kunden ser hele appen. Leverandøren ser en mock-up af leverandørsiden. Nordmejeri har oprettet
+tre tilbud, så Tilbud-skærmen har indhold.
+
 ## Skærme
 
 - **Overblik** – forbrug, cashback, indsigt og liste over kvitteringer

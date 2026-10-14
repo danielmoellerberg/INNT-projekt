@@ -178,9 +178,13 @@ Koden skal kunne forklares til eksamen, så kommentarerne er **mere forklarende*
 - Undtagelse: leverandørernes cashback-tilbud ligger under `offers/` og kan **læses** af alle
   indloggede brugere, men kun **skrives** af den leverandør, der har oprettet tilbuddet
   (`ownerId`). Ellers kan kunderne ikke se tilbuddene.
-- Kendt begrænsning: brugerens rolle (kunde eller leverandør) gemmes af brugeren selv, så
-  reglerne kan ikke garantere, at kun rigtige leverandører opretter tilbud. Det er acceptabelt
-  i en prototype, men skal nævnes, hvis det bliver relevant.
+- Kun brugere med rollen `leverandoer` i `users/{uid}/profil/rolle` må skrive i `offers/`.
+- Rollen er **låst**: den kan kun sættes én gang (ved oprettelsen) og hverken ændres eller
+  slettes bagefter. Resten af profilen (navn, e-mail) kan stadig ændres. Derfor ligger
+  skriveadgangen på de enkelte felter under `users/{uid}` og ikke på `users/{uid}` selv:
+  `.write` arves nedad og kan ikke tages væk længere nede, og `.validate` køres ikke ved sletning.
+- Kendt begrænsning: brugeren vælger stadig selv sin rolle ved oprettelsen, så reglerne kan ikke
+  garantere, at en "leverandør" er en rigtig virksomhed. Det er acceptabelt i en prototype.
 
 ## API-nøgler og .env
 

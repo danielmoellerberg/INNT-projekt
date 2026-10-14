@@ -14,14 +14,19 @@ export default function AuthStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: GlobalStyle.header,
-        headerTitleStyle: GlobalStyle.headerTitel,
-        headerTintColor: Colors.surface,
+        // Som i Figma: headeren har samme baggrund som skærmen, ingen titel og en
+        // grøn tilbage-knap med teksten "Log ind"
+        headerStyle: GlobalStyle.stackHeader,
+        headerShadowVisible: false,
+        headerTintColor: Colors.primary,
+        headerTitle: "",
+        headerBackTitle: "Log ind",
+        cardStyle: GlobalStyle.skaerm,
       }}
     >
       {/* Login har ingen header, så skærmen ser ud som en velkomstside */}
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="OpretBruger" component={OpretBrugerScreen} options={{ title: "Opret bruger" }} />
+      <Stack.Screen name="OpretBruger" component={OpretBrugerScreen} />
     </Stack.Navigator>
   );
 }

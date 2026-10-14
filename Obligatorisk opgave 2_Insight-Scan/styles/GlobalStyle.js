@@ -1,459 +1,1162 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 
-// Farvepalet - teal som brandfarve, amber til cashback (så "penge" springer i øjnene)
+// =====================================================================
+// 1. DESIGNVÆRDIER
+// Designsystemet fra Figma ("Insight-app" → Designsystem). Navnene er præcis de samme
+// som Figmas variabler og tekststyles, så design og kode kan sammenlignes direkte.
+// Al styling længere nede bruger KUN disse konstanter (mønster fra Colors i øvelse 04).
+// Faste mål som højder og ikonstørrelser er taget direkte fra Figma, hvor de heller
+// ikke er variabler.
+// =====================================================================
+
+// Figma-samlingen "Colors" (light mode, den eneste appen bruger).
+// Tal i kommentaren = kontrast mod surface, som angivet i Figma (min. 4,5:1 for tekst).
 export const Colors = {
-  primary: "#0F766E",
-  primaryDark: "#115E59",
-  primaryLight: "#E6F4F1",
-  accent: "#F59E0B",
-  accentLight: "#FEF3C7",
-  background: "#F5F7F6",
-  surface: "#FFFFFF",
-  textDark: "#1F2937",
-  textMuted: "#6B7280",
-  border: "#E5E7EB",
+  bg: "#F3F6F2", // baggrund bag kort og lister
+  surface: "#FFFFFF", // kort og felter
+  glass: "#FFFFFFB8", // hvid, 72 % dækkende - kun det flydende lag (tab bar)
+  glassStroke: "#FFFFFF99", // hvid, 60 % dækkende - kant på glas-laget
+  separator: "#DCE3DE", // skillelinjer
+  text: "#111814", // 18:1 (16,6:1 mod bg)
+  textSecondary: "#4B5952", // 7,4:1
+  textTertiary: "#6B7770", // 4,7:1
+  primary: "#1D7348", // 5,8:1 - knapper og aktive elementer
+  onPrimary: "#FFFFFF", // tekst på primary (5,8:1)
+  primarySoft: "#DDF0E4", // lys grøn baggrund, fx butikslogoer
+  cashback: "#8A5300", // 6,3:1 - cashback-beløb
+  cashbackSoft: "#FFF1D6", // lys baggrund til cashback
+  danger: "#B3261E", // 6,5:1 - fx Log ud
 };
 
-// ALLE styles i appen ligger her, så der ikke er inline-styles ude i skærmene
-export const GlobalStyle = StyleSheet.create({
-  // ---------- Navigation (header + tab bar) ----------
-  header: {
-    backgroundColor: Colors.primary,
-  },
-  headerTitel: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: Colors.surface,
-  },
-  tabBar: {
-    backgroundColor: Colors.primary,
-    paddingTop: 4,
-  },
+// Figma-samlingen "Colors Dark". Bruges ikke endnu - appen kører kun i light mode.
+export const ColorsDark = {
+  bg: "#0D1210",
+  surface: "#1A211D",
+  glass: "rgba(26, 33, 29, 0.72)",
+  glassStroke: "rgba(255, 255, 255, 0.12)",
+  separator: "#2B342F",
+  text: "#EEF3EF",
+  textSecondary: "#A8B4AD",
+  textTertiary: "#8A968F",
+  primary: "#5CCB92",
+  onPrimary: "#05150C",
+  primarySoft: "#173A27",
+  cashback: "#F4B860",
+  cashbackSoft: "#3A2B12",
+  danger: "#FF7A70",
+};
 
-  // ---------- Generelt ----------
-  container: {
+// Figma-samlingen "Spacing" (afstande i punkter)
+export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+  screen: 20, // luft i siderne af skærmen
+};
+
+// Figma-samlingen "Radius" (runde hjørner)
+export const Radius = {
+  sm: 10,
+  md: 16,
+  lg: 24,
+  pill: 999, // helt rund ende, fx knapper og den flydende tab bar
+};
+
+// SF Pro Rounded til beløb. På iOS giver "ui-rounded" systemets afrundede font (SF Pro Rounded),
+// som virker i Expo Go uden ekstra fontfil. Android har ikke en afrundet systemfont, så der
+// bruges den almindelige systemfont med samme størrelse og vægt.
+const roundedFont = Platform.select({ ios: "ui-rounded", default: undefined });
+
+// Figmas tekststyles "Typography/...". SF Pro er iOS' systemfont og bruges automatisk,
+// så fontFamily angives kun for beløbene. Størrelser følger Apples Dynamic Type-standarder.
+// Figma bruger SF Pros egne vægte (Semibold 590, Medium 510). React Native kender kun hele
+// hundreder, så de er rundet til nærmeste: 590 -> "600" og 510 -> "500".
+export const Typography = {
+  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: "700" },
+  title1: { fontSize: 28, lineHeight: 34, fontWeight: "700" },
+  title2: { fontSize: 22, lineHeight: 28, fontWeight: "700" },
+  title3: { fontSize: 20, lineHeight: 25, fontWeight: "600" },
+  headline: { fontSize: 17, lineHeight: 22, fontWeight: "600" },
+  body: { fontSize: 17, lineHeight: 22, fontWeight: "400" },
+  callout: { fontSize: 16, lineHeight: 21, fontWeight: "400" },
+  subheadline: { fontSize: 15, lineHeight: 20, fontWeight: "400" },
+  footnote: { fontSize: 13, lineHeight: 18, fontWeight: "400" },
+  caption: { fontSize: 12, lineHeight: 16, fontWeight: "500" },
+  amountHero: { fontSize: 44, lineHeight: 48, fontWeight: "700", fontFamily: roundedFont },
+  amount: { fontSize: 22, lineHeight: 26, fontWeight: "600", fontFamily: roundedFont },
+};
+
+// Figma-effekten "Glass/Elevation": blød skygge under det flydende lag og cashback-kortet.
+// Figmas skyggefarve (#0D1A12) er tæt på Colors.text, så den bruges i stedet for en løs hex.
+// Figma har også baggrunds-blur. Det kræver pakken expo-blur, som ikke er brugt i kurset,
+// så den er udeladt indtil videre (kan tilføjes senere).
+export const Shadow = {
+  glass: {
+    shadowColor: Colors.text,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 8, // Android bruger elevation i stedet for shadow-egenskaberne
+  },
+};
+
+// Luft i bunden af lister og skærme, så den flydende tab bar ikke dækker sidste række.
+// 124 er den samme bundmargen, som Figma-skærmene bruger.
+const TAB_BAR_LUFT = 124;
+
+// Dynamisk bredde, fx til fremdriftsbjælker, hvor bredden afhænger af data.
+// Den ligger her, så selv dynamisk styling er samlet i denne fil (ingen inline-styles i skærmene).
+// Eksempel: style={[GlobalStyle.kategoriFremdrift, bredde("34%")]}
+export function bredde(vaerdi) {
+  return { width: vaerdi };
+}
+
+// =====================================================================
+// 2. FÆLLES STYLES
+// =====================================================================
+export const GlobalStyle = StyleSheet.create({
+  // ---------- Skærme ----------
+  skaerm: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.bg,
+  },
+  // Indhold i ScrollView: afstand mellem sektionerne kommer fra gap
+  skaermIndhold: {
+    paddingHorizontal: Spacing.screen,
+    paddingTop: Spacing.sm,
+    paddingBottom: TAB_BAR_LUFT,
+    gap: Spacing.xl,
+  },
+  // Indhold i FlatList: afstanden styres med listeMellemrum og sektionMellemrum
+  listeIndhold: {
+    paddingHorizontal: Spacing.screen,
+    paddingTop: Spacing.sm,
+    paddingBottom: TAB_BAR_LUFT,
+  },
+  listeMellemrum: {
+    height: Spacing.md,
+  },
+  // Toppen af en FlatList (ListHeaderComponent): kun afstand mellem sektionerne,
+  // fordi margenerne allerede kommer fra listeIndhold
+  sektioner: {
+    gap: Spacing.xl,
+  },
+  // Afstand under toppen af en FlatList, når listen starter lige efter overskriften
+  listeHeader: {
+    marginBottom: Spacing.lg,
+  },
+  skaermHeader: {
+    gap: Spacing.xs,
+  },
+  titelStor: {
+    ...Typography.largeTitle,
+    color: Colors.text,
+  },
+  undertitel: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+  },
+  sektionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginBottom: Spacing.md,
+  },
+  sektionTitel: {
+    ...Typography.title3,
+    color: Colors.text,
+  },
+  linkTekst: {
+    ...Typography.callout,
+    color: Colors.primary,
+  },
+  fodnote: {
+    ...Typography.footnote,
+    color: Colors.textTertiary,
+  },
+  skillelinje: {
+    height: 1,
+    backgroundColor: Colors.separator,
   },
   centreret: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
-  },
-  indhold: {
-    padding: 16,
-  },
-  listeIndhold: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  kort: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: Colors.textDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  række: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  rækkeMedLinje: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  sektionsTitel: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: Colors.textDark,
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  etiket: {
-    fontSize: 14,
-    color: Colors.textMuted,
-  },
-  værdi: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.textDark,
-  },
-  brødtekst: {
-    fontSize: 14,
-    color: Colors.textDark,
-    lineHeight: 20,
+    backgroundColor: Colors.bg,
   },
 
-  // ---------- ScanReminderBanner ----------
-  banner: {
-    backgroundColor: Colors.accentLight,
-    borderRadius: 16,
+  // ---------- Tom tilstand (når der endnu ikke er data) ----------
+  tomTilstand: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.xl,
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  tomIkon: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tomTitel: {
+    ...Typography.title3,
+    color: Colors.text,
+    textAlign: "center",
+  },
+  tomTekst: {
+    ...Typography.subheadline,
+    color: Colors.textSecondary,
+    textAlign: "center",
+  },
+  tomHandling: {
+    alignSelf: "stretch",
+  },
+
+  // ---------- Fælles komponenter (fra Figma: "Komponenter") ----------
+  // Fælles feedback, når noget trykkes: elementet bliver lidt gennemsigtigt
+  trykket: {
+    opacity: 0.85,
+  },
+  deaktiveret: {
+    opacity: 0.5,
+  },
+
+  // PrimaryButton: kapselformet, én per skærm
+  primaryButton: {
+    height: 52,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
+  },
+  primaryButtonTekst: {
+    ...Typography.headline,
+    color: Colors.onPrimary,
+  },
+
+  // TextField: synlig label over feltet, så man altid kan se, hvad feltet er til
+  textField: {
+    gap: 6,
+  },
+  textFieldLabel: {
+    ...Typography.subheadline,
+    color: Colors.text,
+  },
+  textFieldInput: {
+    ...Typography.body,
+    height: 52,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.accent,
-    padding: 14,
-    marginBottom: 12,
+    borderColor: Colors.separator,
+    backgroundColor: Colors.surface,
+    color: Colors.text,
+  },
+
+  // StoreLogo: butikkens forbogstav i en grøn firkant (bruges i ReceiptRow, StoreRow og Kvittering)
+  storeLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  storeLogoTekst: {
+    ...Typography.headline,
+    color: Colors.primary,
+  },
+  storeLogoStor: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  storeLogoStorTekst: {
+    ...Typography.title2,
+    color: Colors.primary,
+  },
+
+  // Fælles for tekstkolonnen i rækker og kort: navn øverst, info under
+  rækkeTekst: {
+    flex: 1,
+    gap: 2,
+  },
+  rækkeTitel: {
+    ...Typography.headline,
+    color: Colors.text,
+  },
+  rækkeInfo: {
+    ...Typography.footnote,
+    color: Colors.textSecondary,
+  },
+
+  // ReceiptRow: én kvittering i en liste
+  receiptRow: {
+    height: 72,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface,
+  },
+  receiptRowBeloeb: {
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  receiptRowCashback: {
+    ...Typography.footnote,
+    color: Colors.cashback,
+  },
+
+  // OfferCard: ét tilbud med pris, cashback-mærke og en knap til indkøbslisten
+  offerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface,
+  },
+  offerCardBillede: {
+    width: 64,
+    height: 64,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  offerCardPrisRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingTop: Spacing.xs,
+  },
+  cashbackBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.cashbackSoft,
+  },
+  cashbackBadgeTekst: {
+    ...Typography.caption,
+    color: Colors.cashback,
+  },
+  // 44 x 44 er Apples mindste anbefalede trykflade
+  offerCardTilfoejKnap: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // StoreRow: én butik med en "Jeg handler her"-kontakt
+  storeRow: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+
+  // ScanReminderBanner: påmindelse, hvis det er længe siden sidste scanning (fra opgave 1)
+  banner: {
+    backgroundColor: Colors.cashbackSoft,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    gap: Spacing.md,
   },
   bannerTop: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 10,
-  },
-  bannerIkon: {
-    marginRight: 10,
-    marginTop: 2,
+    gap: Spacing.sm,
   },
   bannerTekst: {
+    ...Typography.subheadline,
     flex: 1,
-    fontSize: 14,
-    color: Colors.textDark,
-    lineHeight: 20,
-  },
-  bannerLukKnap: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginLeft: 8,
+    color: Colors.text,
   },
   bannerLukTekst: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: Colors.textMuted,
+    ...Typography.subheadline,
+    fontWeight: Typography.headline.fontWeight,
+    color: Colors.textSecondary,
   },
 
-  // ---------- OverblikScreen ----------
-  forbrugKort: {
+  // ---------- Navigation: den flydende tab bar ----------
+  // Figma har "Liquid Glass" med baggrunds-blur. Uden expo-blur bruger vi Colors.glass
+  // (halvgennemsigtig hvid) og skyggen. Blur kan tilføjes senere med expo-blur.
+  tabBar: {
+    position: "absolute",
+    bottom: 34,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    height: 72,
+    paddingHorizontal: 14,
+    paddingTop: 0,
+    paddingBottom: 0,
+    borderRadius: Radius.pill,
+    borderTopWidth: 1,
+    borderWidth: 1,
+    borderColor: Colors.glassStroke,
+    backgroundColor: Colors.glass,
+    ...Shadow.glass,
+  },
+  // Skjuler tab-baren på Scan, som fylder hele skærmen i Figma
+  tabBarSkjult: {
+    display: "none",
+  },
+  tabItem: {
+    paddingVertical: 0,
+    justifyContent: "center",
+  },
+  tabIkonOmraade: {
+    width: 52,
+    height: 30,
+  },
+  tabIkonPille: {
+    width: 52,
+    height: 30,
+    borderRadius: Radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabIkonPilleAktiv: {
+    backgroundColor: Colors.primarySoft,
+  },
+  tabScanIkonOmraade: {
+    width: 44,
+    height: 44,
+  },
+  tabScanKnap: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.pill,
     backgroundColor: Colors.primary,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
     alignItems: "center",
+    justifyContent: "center",
   },
-  forbrugEtiket: {
-    fontSize: 14,
-    color: Colors.primaryLight,
-    marginBottom: 4,
+  tabLabel: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    marginTop: 3,
   },
-  forbrugTal: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: Colors.surface,
-  },
-  cashbackKort: {
-    backgroundColor: Colors.accentLight,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.accent,
-    padding: 16,
-    marginBottom: 12,
-  },
-  cashbackTal: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: Colors.textDark,
-  },
-  indsigtKort: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  indsigtTitel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: Colors.primaryDark,
-    marginBottom: 8,
-  },
-  indsigtTekst: {
-    fontSize: 14,
-    color: Colors.textDark,
-    lineHeight: 20,
-    marginBottom: 6,
+  tabLabelAktiv: {
+    ...Typography.caption,
+    color: Colors.primary,
+    marginTop: 3,
   },
 
-  // ---------- Kvitteringer i FlatList ----------
-  kvitteringKort: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    marginBottom: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
+  // Header i stacks: samme baggrund som skærmen og ingen skygge, som i Figma
+  stackHeader: {
+    backgroundColor: Colors.bg,
+  },
+
+  // =====================================================================
+  // 3. SKÆRME
+  // =====================================================================
+
+  // ---------- LoginScreen ----------
+  loginIndhold: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.screen,
+    paddingTop: 56,
+    paddingBottom: Spacing.xl,
+    gap: Spacing.xl,
+  },
+  brand: {
+    gap: Spacing.md,
+  },
+  logoFlise: {
+    width: 72,
+    height: 72,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.primary,
     alignItems: "center",
+    justifyContent: "center",
   },
-  kvitteringVenstre: {
-    flex: 1,
+  felter: {
+    gap: Spacing.lg,
   },
-  kvitteringButik: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: Colors.textDark,
+  opretLinkRække: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "baseline",
+    gap: 6,
   },
-  kvitteringDato: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    marginTop: 2,
+  opretLinkTekst: {
+    ...Typography.callout,
+    color: Colors.textSecondary,
   },
-  kvitteringTotal: {
-    fontSize: 16,
-    fontWeight: "bold",
+  opretLinkHandling: {
+    ...Typography.headline,
     color: Colors.primary,
   },
-
-  // ---------- KvitteringScreen (detaljer) ----------
-  kategoriTitel: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: Colors.primaryDark,
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  vareNavn: {
-    fontSize: 15,
-    color: Colors.textDark,
+  // Skubber fodnoten ned i bunden af skærmen
+  fyld: {
     flex: 1,
   },
+  fodnoteCentreret: {
+    ...Typography.footnote,
+    color: Colors.textTertiary,
+    textAlign: "center",
+  },
+
+  // ---------- OpretBrugerScreen ----------
+  opretIndhold: {
+    paddingHorizontal: Spacing.screen,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.xxl,
+    gap: Spacing.screen,
+  },
+  rolleListe: {
+    gap: Spacing.md,
+  },
+  rolleKort: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    padding: Spacing.lg,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.separator,
+    backgroundColor: Colors.surface,
+  },
+  rolleKortValgt: {
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primarySoft,
+  },
+  ikonFlise: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ikonFliseHvid: {
+    backgroundColor: Colors.surface,
+  },
+  radio: {
+    width: 26,
+    height: 26,
+    borderRadius: Radius.pill,
+    borderWidth: 2,
+    borderColor: Colors.textTertiary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioValgt: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  felterTaet: {
+    gap: Spacing.md,
+  },
+
+  // ---------- HjemScreen ----------
+  hjemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  hilsenDato: {
+    ...Typography.subheadline,
+    color: Colors.textSecondary,
+  },
+  profilKnap: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profilKnapTekst: {
+    ...Typography.headline,
+    color: Colors.primary,
+  },
+  // Signaturen: cashback-kortet ligner en bon med perforeret kant forneden
+  cashbackKort: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: Radius.lg,
+    borderTopRightRadius: Radius.lg,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
+    paddingTop: 22,
+    paddingBottom: 30,
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.xs,
+    ...Shadow.glass,
+  },
+  cashbackEtiket: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+  },
+  cashbackBeloeb: {
+    ...Typography.amountHero,
+    color: Colors.cashback,
+  },
+  cashbackUndertekst: {
+    ...Typography.subheadline,
+    color: Colors.textSecondary,
+  },
+  udbetaling: {
+    paddingTop: 10,
+    gap: 6,
+  },
+  udbetalingSpor: {
+    height: 6,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.cashbackSoft,
+    overflow: "hidden",
+  },
+  udbetalingFremdrift: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.cashback,
+  },
+  udbetalingTekst: {
+    ...Typography.footnote,
+    color: Colors.textSecondary,
+  },
+  // Hullerne i bonens kant er cirkler i baggrundsfarven, som ligger halvt over kortets bund
+  perforering: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: -6.5,
+    height: 13,
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  perforeringHul: {
+    width: 13,
+    height: 13,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.bg,
+  },
+  kpiRække: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  kpiKort: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    gap: 2,
+  },
+  kpiTal: {
+    ...Typography.amount,
+    color: Colors.text,
+  },
+  kpiLabel: {
+    ...Typography.footnote,
+    color: Colors.textSecondary,
+  },
+  forbrugKort: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    gap: 14,
+  },
+  forbrugHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+  },
+  forbrugTotal: {
+    ...Typography.subheadline,
+    color: Colors.textSecondary,
+  },
+  kategoriRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  kategoriNavn: {
+    ...Typography.subheadline,
+    width: 92,
+    color: Colors.text,
+  },
+  kategoriSpor: {
+    flex: 1,
+    height: 10,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+    overflow: "hidden",
+  },
+  kategoriFremdrift: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary,
+  },
+  kategoriProcent: {
+    ...Typography.footnote,
+    width: 40,
+    textAlign: "right",
+    color: Colors.textSecondary,
+  },
+
+  // ---------- KvitteringScreen ----------
+  kvitteringHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  kvitteringTitel: {
+    ...Typography.title1,
+    color: Colors.text,
+  },
+  kvitteringUndertitel: {
+    ...Typography.subheadline,
+    color: Colors.textSecondary,
+  },
+  cashbackBanner: {
+    backgroundColor: Colors.cashbackSoft,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    gap: 2,
+  },
+  cashbackBannerTekst: {
+    ...Typography.subheadline,
+    color: Colors.text,
+  },
+  cashbackBannerBeloeb: {
+    ...Typography.amount,
+    color: Colors.cashback,
+  },
+  vareKort: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  vareKortTitel: {
+    ...Typography.headline,
+    color: Colors.text,
+  },
+  vareRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.md,
+  },
+  vareNavnKolonne: {
+    flex: 1,
+  },
+  vareNavn: {
+    ...Typography.body,
+    color: Colors.text,
+  },
+  vareMeta: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  vareAntal: {
+    ...Typography.footnote,
+    color: Colors.textSecondary,
+  },
+  vareCashback: {
+    ...Typography.footnote,
+    color: Colors.cashback,
+  },
   varePris: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: Colors.textDark,
-    marginLeft: 8,
+    ...Typography.body,
+    color: Colors.text,
   },
-  cashbackMærke: {
-    backgroundColor: Colors.accentLight,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginLeft: 8,
+  totalTekst: {
+    ...Typography.headline,
+    color: Colors.text,
   },
-  cashbackMærkeTekst: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: Colors.textDark,
+  totalBeloeb: {
+    ...Typography.amount,
+    color: Colors.text,
+  },
+
+  // ---------- TilbudScreen ----------
+  chipRække: {
+    gap: Spacing.sm,
+  },
+  chip: {
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.separator,
+    backgroundColor: Colors.surface,
+    justifyContent: "center",
+  },
+  chipAktiv: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  chipTekst: {
+    ...Typography.subheadline,
+    color: Colors.text,
+  },
+  chipTekstAktiv: {
+    ...Typography.subheadline,
+    color: Colors.onPrimary,
+  },
+  udvalgtKort: {
+    backgroundColor: Colors.surface,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  udvalgtEyebrow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  udvalgtEyebrowTekst: {
+    ...Typography.caption,
+    color: Colors.primary,
+  },
+  udvalgtBillede: {
+    height: 140,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  udvalgtVare: {
+    ...Typography.title3,
+    color: Colors.text,
+  },
+  udvalgtButik: {
+    ...Typography.subheadline,
+    color: Colors.textSecondary,
+  },
+  udvalgtPrisRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  udvalgtPris: {
+    ...Typography.amount,
+    color: Colors.text,
+  },
+  foerPris: {
+    ...Typography.subheadline,
+    color: Colors.textTertiary,
+    textDecorationLine: "line-through",
+  },
+  cashbackBadgeStor: {
+    paddingHorizontal: 10,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.cashbackSoft,
+  },
+  cashbackBadgeStorTekst: {
+    ...Typography.footnote,
+    color: Colors.cashback,
   },
 
   // ---------- ScanScreen ----------
-  scanBoks: {
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: Colors.primaryLight,
-    padding: 28,
-    alignItems: "center",
-    marginBottom: 20,
-    width: "100%",
+  scanSkaerm: {
+    flex: 1,
+    backgroundColor: Colors.text,
   },
-  scanTitel: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: Colors.textDark,
-    marginTop: 12,
-    marginBottom: 6,
-    textAlign: "center",
-  },
-  scanTekst: {
-    fontSize: 14,
-    color: Colors.textMuted,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  statusBoks: {
-    backgroundColor: Colors.accentLight,
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 16,
-    width: "100%",
-  },
-  statusTekst: {
-    fontSize: 14,
-    color: Colors.textDark,
-    textAlign: "center",
-  },
-
-  // ---------- CashbackScreen ----------
-  saldoKort: {
-    backgroundColor: Colors.accent,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-    alignItems: "center",
-  },
-  saldoEtiket: {
-    fontSize: 14,
-    color: Colors.textDark,
-    marginBottom: 4,
-  },
-  saldoTal: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: Colors.textDark,
-  },
-  tilbudKort: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    marginBottom: 10,
+  scanTopBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: Spacing.screen,
+    paddingTop: Spacing.sm,
   },
-  tilbudVenstre: {
-    flex: 1,
-  },
-  tilbudBrand: {
-    fontSize: 13,
-    color: Colors.textMuted,
-  },
-  tilbudVare: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.textDark,
-    marginTop: 2,
-  },
-  tilbudBeloebBoks: {
-    backgroundColor: Colors.accentLight,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginLeft: 8,
-  },
-  tilbudBeloeb: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: Colors.textDark,
-  },
-
-  // ---------- LoginScreen og OpretBrugerScreen (midlertidige placeholders) ----------
-  authIndhold: {
-    flexGrow: 1,
+  glasKnap: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.glass,
+    alignItems: "center",
     justifyContent: "center",
-    padding: 24,
   },
-  authTitel: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: Colors.textDark,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  authUndertitel: {
-    fontSize: 15,
-    color: Colors.textMuted,
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  input: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
+  scanHint: {
+    height: 36,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: Colors.textDark,
-    marginBottom: 12,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.glass,
+    justifyContent: "center",
   },
-  linkTekst: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: Colors.primary,
-    textAlign: "center",
-    marginTop: 12,
+  scanHintTekst: {
+    ...Typography.subheadline,
+    color: Colors.text,
+  },
+  scanSoeger: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.screen,
+  },
+  scanRamme: {
+    width: 260,
+    height: 400,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // En stiliseret kvittering inde i rammen. Figmas papirfarve er erstattet af den nærmeste
+  // designværdi (Colors.bg), så der ikke står løse hex-værdier
+  kvitteringSilhuet: {
+    width: 180,
+    height: 320,
+    borderRadius: 4,
+    backgroundColor: Colors.bg,
+    opacity: 0.9,
+    paddingTop: Spacing.xl,
+    paddingHorizontal: Spacing.screen,
+    gap: 10,
+  },
+  silhuetLinje: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.separator,
+  },
+  // De fire hjørner af scanne-rammen tegnes som kanter på små firkanter
+  hjoerne: {
+    position: "absolute",
+    width: 40,
+    height: 40,
+    borderColor: Colors.onPrimary,
+  },
+  hjoerneTopVenstre: {
+    top: 0,
+    left: 0,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderTopLeftRadius: Spacing.md,
+  },
+  hjoerneTopHoejre: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 4,
+    borderRightWidth: 4,
+    borderTopRightRadius: Spacing.md,
+  },
+  hjoerneBundVenstre: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: 4,
+    borderLeftWidth: 4,
+    borderBottomLeftRadius: Spacing.md,
+  },
+  hjoerneBundHoejre: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: 4,
+    borderRightWidth: 4,
+    borderBottomRightRadius: Spacing.md,
+  },
+  scanInstruktion: {
+    ...Typography.headline,
+    color: Colors.onPrimary,
+  },
+  scanKontroller: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 40,
+    paddingBottom: Spacing.xxl,
+  },
+  kontrolKolonne: {
+    alignItems: "center",
+    gap: 6,
+  },
+  galleriKnap: {
+    width: 52,
+    height: 52,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.glass,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  kontrolTekst: {
+    ...Typography.caption,
+    color: Colors.onPrimary,
+  },
+  udloeser: {
+    width: 80,
+    height: 80,
+    borderRadius: Radius.pill,
+    borderWidth: 4,
+    borderColor: Colors.onPrimary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  udloeserIndre: {
+    width: 64,
+    height: 64,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.onPrimary,
+  },
+  kontrolPlads: {
+    width: 52,
+    height: 52,
   },
 
-  // ---------- MadplanScreen og ButikkerScreen (midlertidige placeholders) ----------
-  placeholderTitel: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: Colors.textDark,
-    textAlign: "center",
-    marginBottom: 8,
+  // ---------- MadplanScreen ----------
+  aiKort: {
+    backgroundColor: Colors.primarySoft,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.md,
   },
-  placeholderTekst: {
-    fontSize: 15,
-    color: Colors.textMuted,
-    textAlign: "center",
-    lineHeight: 22,
+  aiTitelRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  aiTitel: {
+    ...Typography.headline,
+    color: Colors.text,
+  },
+  aiInputRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    height: 52,
+    paddingLeft: Spacing.lg,
+    paddingRight: 6,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.surface,
+  },
+  aiInput: {
+    ...Typography.body,
+    flex: 1,
+    color: Colors.text,
+  },
+  aiSendKnap: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiFodnote: {
+    ...Typography.footnote,
+    color: Colors.textSecondary,
+  },
+
+  // ---------- ButikkerScreen ----------
+  // Rækkerne lægges i hvert sit hvide felt, men første og sidste får runde hjørner,
+  // så listen ser ud som ét samlet kort
+  butikRække: {
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.lg,
+  },
+  butikRækkeFoerste: {
+    borderTopLeftRadius: Radius.md,
+    borderTopRightRadius: Radius.md,
+  },
+  butikRækkeSidste: {
+    borderBottomLeftRadius: Radius.md,
+    borderBottomRightRadius: Radius.md,
+  },
+  butikSkillelinjeOmraade: {
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.lg,
+  },
+
+  // ---------- IndstillingerScreen ----------
+  profilKort: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: Spacing.lg,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarTekst: {
+    ...Typography.title2,
+    color: Colors.primary,
+  },
+  profilNavn: {
+    ...Typography.title3,
+    color: Colors.text,
+  },
+  gruppe: {
+    gap: Spacing.sm,
+  },
+  gruppeTitel: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+  },
+  gruppeListe: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    overflow: "hidden",
+  },
+  indstillingRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    height: 56,
+    paddingHorizontal: Spacing.lg,
+  },
+  indstillingIkon: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  indstillingTekst: {
+    ...Typography.body,
+    flex: 1,
+    color: Colors.text,
+  },
+  indstillingVaerdi: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+  },
+  logUdKnap: {
+    height: 52,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logUdTekst: {
+    ...Typography.headline,
+    color: Colors.danger,
   },
 
   // ---------- LeverandoerScreen ----------
   leverandoerIndhold: {
-    flex: 1,
-    padding: 16,
+    padding: Spacing.screen,
+    paddingBottom: Spacing.xxl,
+    gap: Spacing.lg,
   },
+  // Billedet er et screenshot af Figma-skærmen (393 x 1033), så forholdet bevares
   mockupBillede: {
-    flex: 1,
     width: "100%",
-    resizeMode: "contain",
-    marginVertical: 16,
-  },
-
-  // ---------- ButtonComponent ----------
-  knapRække: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  primaryBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: 50,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  primaryBtnTrykket: {
-    backgroundColor: Colors.primaryDark,
-  },
-  primaryBtnText: {
-    color: Colors.surface,
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  secondaryBtn: {
-    backgroundColor: Colors.surface,
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  secondaryBtnTrykket: {
-    backgroundColor: Colors.primaryLight,
-  },
-  secondaryBtnText: {
-    color: Colors.primary,
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  // Bruges når to knapper står ved siden af hinanden
-  halvKnap: {
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  // Bruges når en knap er slået fra (fx mens der scannes)
-  deaktiveret: {
-    opacity: 0.5,
+    aspectRatio: 393 / 1033,
+    borderRadius: Radius.md,
   },
 });
