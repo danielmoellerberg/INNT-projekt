@@ -873,6 +873,40 @@ export const GlobalStyle = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.text,
   },
+  // Kameraet fylder hele skærmen bag knapperne
+  kamera: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  // Laget med knapper, der ligger ovenpå kameraet
+  scanOverlay: {
+    flex: 1,
+  },
+  scanCentreret: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xl,
+  },
+  // Hvidt kort til fejlbeskeder og spørgsmål om kameratilladelse
+  scanBeskedKort: {
+    alignSelf: "stretch",
+    marginHorizontal: Spacing.screen,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.xl,
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  scanLukTekst: {
+    ...Typography.callout,
+    color: Colors.onPrimary,
+  },
+  glasKnapAktiv: {
+    backgroundColor: Colors.surface,
+  },
   scanTopBar: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -910,23 +944,6 @@ export const GlobalStyle = StyleSheet.create({
     height: 400,
     alignItems: "center",
     justifyContent: "center",
-  },
-  // En stiliseret kvittering inde i rammen. Figmas papirfarve er erstattet af den nærmeste
-  // designværdi (Colors.bg), så der ikke står løse hex-værdier
-  kvitteringSilhuet: {
-    width: 180,
-    height: 320,
-    borderRadius: 4,
-    backgroundColor: Colors.bg,
-    opacity: 0.9,
-    paddingTop: Spacing.xl,
-    paddingHorizontal: Spacing.screen,
-    gap: 10,
-  },
-  silhuetLinje: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.separator,
   },
   // De fire hjørner af scanne-rammen tegnes som kanter på små firkanter
   hjoerne: {
@@ -974,6 +991,7 @@ export const GlobalStyle = StyleSheet.create({
     paddingHorizontal: 40,
     paddingBottom: Spacing.xxl,
   },
+  // Galleri-knappen: vælg et billede af bonen fra telefonens fotos
   kontrolKolonne: {
     alignItems: "center",
     gap: 6,
@@ -1008,6 +1026,60 @@ export const GlobalStyle = StyleSheet.create({
   kontrolPlads: {
     width: 52,
     height: 52,
+  },
+
+  // ---------- GodkendKvitteringScreen ----------
+  // Lysegrøn boks, der fortæller, at varerne er aflæst af AI
+  aiMaerke: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.primarySoft,
+  },
+  aiMaerkeTekst: {
+    ...Typography.footnote,
+    flex: 1,
+    color: Colors.text,
+  },
+  godkendVareRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  // Feltet, hvor prisen kan rettes
+  prisInput: {
+    ...Typography.body,
+    width: 96,
+    height: 44,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Colors.separator,
+    backgroundColor: Colors.surface,
+    color: Colors.text,
+    textAlign: "right",
+  },
+  // Rød kant, når prisen ikke er et gyldigt tal
+  prisInputFejl: {
+    borderColor: Colors.danger,
+  },
+  // Låst pris på varer med cashback: samme bredde som feltet, men kan ikke rettes
+  prisLaast: {
+    width: 96,
+    height: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: Spacing.xs,
+  },
+  // 44 x 44 er Apples mindste anbefalede trykflade
+  sletKnap: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // ---------- MadplanScreen ----------

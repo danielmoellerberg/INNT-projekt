@@ -20,7 +20,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ref, onValue, push, update } from "firebase/database";
 
 import { rtdb } from "../database/firebase";
-import { KVITTERING_SKABELONER } from "../data/const";
 
 // Faste nøgler til AsyncStorage (mønster fra 08)
 const BUTIKKER_NOEGLE = "VALGTE_BUTIKKER";
@@ -32,6 +31,60 @@ const STANDARD_INDSTILLINGER = { nyeTilbud: true, paamindScan: true };
 function tilListe(data) {
   if (!data) return [];
   return Object.keys(data).map((id) => ({ id: id, ...data[id] }));
+}
+
+// Gør et varenavn sammenligneligt: små bogstaver og kun bogstaver og tal.
+// Så bliver "Revet ost 175g" til "revetost175g" og "Revet ost" til "revetost".
+function normaliser(navn) {
+  return String(navn).toLowerCase().replace(/[^a-z0-9æøå]/g, "");
+}
+
+// Finder tilbuddet på en vare. Navnet på bonen er sjældent helt det samme som i tilbuddet
+// (fx "Revet ost 175g" og "Revet ost"), så vi tjekker, om det ene navn indeholder det andet.
+function findTilbud(alleTilbud, varenavn) {
+  const vare = normaliser(varenavn);
+  return alleTilbud.find((t) => {
+    const tilbudsvare = normaliser(t.vare);
+    return tilbudsvare && (vare.includes(tilbudsvare) || tilbudsvare.includes(vare));
+  });
+}
+
+// ---------- Regler mod snyd ----------
+// Hvor gammel må en bon højst være? Så kan man ikke scanne en bunke gamle boner.
+const MAKS_ALDER_DAGE = 14;
+const MS_PER_DAG = 1000 * 60 * 60 * 24;
+
+// Laver et "aftryk" af en bon: butik, dato, klokkeslæt og total sat sammen til én tekst,
+// fx "rema1000_20261010_1742_12485". To forskellige boner har næsten aldrig samme aftryk,
+// men den samme bon giver altid det samme - også når den scannes af en anden bruger.
+// Aftrykket gemmes i aftryk/ i Firebase, og reglerne tillader kun, at det gemmes én gang.
+function lavAftryk(butik, dato, bonTotal) {
+  // æ, ø og å skrives om, så "Føtex" og "Foetex" giver det samme aftryk
+  const butikNavn = String(butik)
+    .toLowerCase()
+    .replace(/æ/g, "ae")
+    .replace(/ø/g, "oe")
+    .replace(/å/g, "aa")
+    .replace(/[^a-z0-9]/g, "");
+  const d = new Date(dato);
+  const toCifre = (tal) => String(tal).padStart(2, "0");
+  const dag = d.getFullYear() + toCifre(d.getMonth() + 1) + toCifre(d.getDate());
+  const klokken = toCifre(d.getHours()) + toCifre(d.getMinutes());
+  const oere = Math.round(bonTotal * 100);
+  return butikNavn + "_" + dag + "_" + klokken + "_" + oere;
+}
+
+// Læser en værdi i Firebase én gang. Vi bruger onValue som i øvelse 05, men med
+// onlyOnce: true, så den stopper med at lytte efter første svar.
+function laesEnGang(sti) {
+  return new Promise((resolve, reject) => {
+    onValue(
+      ref(rtdb, sti),
+      (snapshot) => resolve(snapshot.val()),
+      (error) => reject(error),
+      { onlyOnce: true }
+    );
+  });
 }
 
 export const AppContext = createContext();
@@ -102,30 +155,74 @@ export function AppProvider({ user, profil, children }) {
     hentPraeferencer();
   }, []);
 
-  // "Scanner" en kvittering: vælger en tilfældig skabelon (simuleret AI-udtræk som i opgave 1),
-  // matcher varerne mod tilbuddene i Firebase og gemmer kvitteringen under brugeren med push.
-  // Returnerer den gemte kvittering, så Scan-skærmen kan vise den bagefter.
-  async function scanNyKvittering() {
-    const skabelon = KVITTERING_SKABELONER[Math.floor(Math.random() * KVITTERING_SKABELONER.length)];
+  // Beregner, hvor meget cashback en vare giver, ud fra tilbuddene i offers/.
+  // Cashback gives per stk., så 2 stk. af en vare med tilbud giver dobbelt cashback.
+  function cashbackForVare(vare) {
+    const match = findTilbud(tilbud, vare.navn);
+    return match ? Math.round(match.cashback * vare.antal * 100) / 100 : 0;
+  }
 
-    // Hver vare får cashback, hvis der findes et tilbud på netop den vare
-    const varer = skabelon.varer.map((vare) => {
-      const match = tilbud.find((t) => t.vare === vare.navn);
-      return { ...vare, cashback: match ? match.cashback : 0 };
-    });
+  // Tjekker en aflæst bon, før brugeren får den vist til godkendelse.
+  // Returnerer en dansk fejlbesked, hvis bonen ikke må bruges, ellers null.
+  async function tjekKvittering(resultat) {
+    // Datoen må ikke ligge i fremtiden (10 minutters slør, hvis telefonens ur går lidt forkert)
+    if (resultat.dato > Date.now() + 10 * 60 * 1000) {
+      return "Datoen på bonen ligger i fremtiden. Tag et nyt billede, så datoen kan læses rigtigt.";
+    }
+    // Gamle boner giver ikke cashback
+    if (Date.now() - resultat.dato > MAKS_ALDER_DAGE * MS_PER_DAG) {
+      return "Bonen er mere end " + MAKS_ALDER_DAGE + " dage gammel. Du kan kun scanne kvitteringer fra de sidste " + MAKS_ALDER_DAGE + " dage.";
+    }
+    // Er bonen scannet før - af dig eller en anden bruger?
+    try {
+      const aftryk = lavAftryk(resultat.butik, resultat.dato, resultat.total);
+      const findes = await laesEnGang("aftryk/" + aftryk);
+      if (findes) {
+        return "Denne kvittering er allerede scannet. Hver kvittering kan kun bruges én gang.";
+      }
+    } catch (error) {
+      // Kan tjekket ikke gennemføres, stopper vi ikke her. Reglerne afviser stadig en dublet,
+      // når kvitteringen gemmes (se gemKvittering).
+    }
+    return null;
+  }
+
+  // Gemmer en kvittering, som brugeren har godkendt efter AI-aflæsningen.
+  // Kvitteringen og bonens aftryk gemmes i ÉN samlet skrivning (update på flere stier).
+  // Firebase gennemfører enten begge dele eller ingen af dem: findes aftrykket allerede,
+  // afviser reglerne hele skrivningen, så en bon aldrig kan gemmes to gange.
+  // Returnerer den gemte kvittering med id, så den kan åbnes bagefter.
+  async function gemKvittering(kvittering) {
+    // Cashback beregnes ud fra AI'ens aflæsning af navn og antal - brugeren kan ikke ændre dem
+    const varer = kvittering.varer.map((vare) => ({ ...vare, cashback: cashbackForVare(vare) }));
+    const aftryk = lavAftryk(kvittering.butik, kvittering.dato, kvittering.bonTotal);
 
     const nyKvittering = {
-      butik: skabelon.butik,
-      adresse: skabelon.adresse,
-      dato: Date.now(),
-      total: varer.reduce((sum, v) => sum + v.pris, 0),
-      cashback: varer.reduce((sum, v) => sum + v.cashback, 0),
+      butik: kvittering.butik,
+      dato: kvittering.dato,
+      // Total er summen af de godkendte varer, så den passer, hvis brugeren har slettet en vare
+      total: Math.round(varer.reduce((sum, v) => sum + v.pris, 0) * 100) / 100,
+      bonTotal: kvittering.bonTotal, // totalen, som den står på bonen
+      cashback: Math.round(varer.reduce((sum, v) => sum + v.cashback, 0) * 100) / 100,
       varer: varer,
+      aftryk: aftryk,
+      aflaestAfAI: true, // så vi senere kan se, at varerne er aflæst af AI og godkendt af brugeren
     };
 
-    // push laver et nyt, unikt id i Firebase (mønster fra 05)
-    const nyRef = await push(ref(rtdb, `users/${user.uid}/kvitteringer`), nyKvittering);
-    return { id: nyRef.key, ...nyKvittering };
+    // push uden data giver bare et nyt, unikt id (mønster fra 05), så vi kan bruge det i update
+    const id = push(ref(rtdb, `users/${user.uid}/kvitteringer`)).key;
+
+    try {
+      // update på roden af databasen skriver flere steder på én gang
+      await update(ref(rtdb), {
+        ["aftryk/" + aftryk]: true,
+        [`users/${user.uid}/kvitteringer/${id}`]: nyKvittering,
+      });
+    } catch (error) {
+      // Reglerne afviser skrivningen, hvis aftrykket allerede findes
+      throw new Error("Denne kvittering er allerede scannet. Hver kvittering kan kun bruges én gang.");
+    }
+    return { id: id, ...nyKvittering };
   }
 
   // Tilføjer et tilbud til brugerens indkøbsliste i Firebase (update, mønster fra 05)
@@ -174,7 +271,9 @@ export function AppProvider({ user, profil, children }) {
         indstillinger,
         bannerLukket,
         lukBanner: () => setBannerLukket(true),
-        scanNyKvittering,
+        cashbackForVare,
+        tjekKvittering,
+        gemKvittering,
         tilfoejTilIndkoebsliste,
         skiftButik,
         skiftIndstilling,

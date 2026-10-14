@@ -12,7 +12,7 @@ import { auth, rtdb } from "./database/firebase";
 import AuthStack from "./components/AuthStack";
 import StackComponent from "./components/StackComponent";
 import TilbudScreen from "./screens/TilbudScreen";
-import ScanScreen from "./screens/ScanScreen";
+import ScanStack from "./components/ScanStack";
 import MadplanScreen from "./screens/MadplanScreen";
 import ButikkerScreen from "./screens/ButikkerScreen";
 import LeverandoerScreen from "./screens/LeverandoerScreen";
@@ -59,11 +59,11 @@ function KundeTabs() {
     >
       <Tab.Screen name="Hjem" component={StackComponent} />
       <Tab.Screen name="Tilbud" component={TilbudScreen} />
-      {/* Scan er fremhævet med en grøn cirkel. Selve Scan-skærmen fylder hele skærmen,
-          så tab-baren skjules, mens man scanner. */}
+      {/* Scan er fremhævet med en grøn cirkel. Scan-fanen har sin egen stack (kamera ->
+          godkend kvittering), og tab-baren skjules, mens man scanner og godkender. */}
       <Tab.Screen
         name="Scan"
-        component={ScanScreen}
+        component={ScanStack}
         options={{
           tabBarStyle: GlobalStyle.tabBarSkjult,
           tabBarIconStyle: GlobalStyle.tabScanIkonOmraade,

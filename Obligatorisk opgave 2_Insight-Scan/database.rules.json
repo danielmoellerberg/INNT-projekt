@@ -16,9 +16,23 @@
           }
         },
 
+        "kvitteringer": {
+          "$kvitteringId": {
+            ".write": "auth != null && auth.uid === $uid && (!data.exists() || !newData.exists())",
+            ".validate": "newData.hasChildren(['butik', 'dato', 'total', 'cashback', 'varer', 'aftryk']) && newData.parent().parent().parent().parent().child('aftryk').child(newData.child('aftryk').val()).val() === true"
+          }
+        },
+
         "$andet": {
           ".write": "auth != null && auth.uid === $uid"
         }
+      }
+    },
+
+    "aftryk": {
+      "$aftryk": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists() && newData.val() === true"
       }
     },
 

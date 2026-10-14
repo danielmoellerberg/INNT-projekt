@@ -1,6 +1,6 @@
 // Faste værdier og hjælpefunktioner til Insight-Scan.
 // Appens data (kvitteringer, tilbud, profil) ligger i Firebase - her ligger kun det,
-// som ikke er brugerdata: kategorier, skabeloner til den simulerede scanning og formatering.
+// som ikke er brugerdata: kategorier og formatering af beløb og datoer.
 
 // ---------- Kategorier ----------
 // Nøglen gemmes i Firebase på hver vare, navnet vises i appen
@@ -12,60 +12,6 @@ export const KATEGORI_NAVNE = {
   drikkevarer: "Drikkevarer",
   andet: "Andet",
 };
-
-// ---------- Simuleret AI-udtræk ----------
-// Indtil kameraet og AI'en er koblet på, "læser" Scan-skærmen en tilfældig af disse kvitteringer
-// (samme idé som i opgave 1). Kvitteringen gemmes derefter i Firebase med dags dato, og resten
-// af appen læser den derfra - der er altså ingen hardcodede lister i skærmene.
-// pris er linjens samlede pris; antal udelades, når der kun er købt én.
-export const KVITTERING_SKABELONER = [
-  {
-    butik: "Netto",
-    adresse: "Frederiksberg Allé",
-    varer: [
-      { navn: "Kyllingebryst 900 g", pris: 119.9, antal: 2, kategori: "kød/protein" },
-      { navn: "Arla minimælk 1 l", pris: 11.95, kategori: "mejeri" },
-      { navn: "Skyr naturel 1 kg", pris: 23.95, kategori: "mejeri" },
-      { navn: "Rugbrød", pris: 18, kategori: "andet" },
-      { navn: "Bananer 1 kg", pris: 16, kategori: "frugt/grønt" },
-      { navn: "Gulerødder 1 kg", pris: 10, antal: 2, kategori: "frugt/grønt" },
-      { navn: "Kaffe 400 g", pris: 52.5, kategori: "drikkevarer" },
-    ],
-  },
-  {
-    butik: "Rema 1000",
-    adresse: "Gl. Kongevej",
-    varer: [
-      { navn: "Hakket oksekød 500 g", pris: 35, kategori: "kød/protein" },
-      { navn: "Pasta penne 500 g", pris: 12.95, kategori: "andet" },
-      { navn: "Hakkede tomater", pris: 21, antal: 3, kategori: "frugt/grønt" },
-      { navn: "Revet ost", pris: 24.95, kategori: "mejeri" },
-      { navn: "Danskvand", pris: 12, kategori: "drikkevarer" },
-    ],
-  },
-  {
-    butik: "Føtex",
-    adresse: "Falkoner Allé",
-    varer: [
-      { navn: "Laks 400 g", pris: 79, kategori: "kød/protein" },
-      { navn: "Broccoli", pris: 15, kategori: "frugt/grønt" },
-      { navn: "Æbler 1 kg", pris: 22, kategori: "frugt/grønt" },
-      { navn: "Æg 10 stk.", pris: 26.25, kategori: "kød/protein" },
-      { navn: "Chips", pris: 25, kategori: "snacks" },
-      { navn: "Appelsinjuice 1 l", pris: 22, kategori: "drikkevarer" },
-    ],
-  },
-  {
-    butik: "Lidl",
-    adresse: "Vesterbrogade",
-    varer: [
-      { navn: "Kyllingebryst 900 g", pris: 49.95, kategori: "kød/protein" },
-      { navn: "Økologiske bananer", pris: 12, kategori: "frugt/grønt" },
-      { navn: "Yoghurt naturel", pris: 16, kategori: "mejeri" },
-      { navn: "Chokolade", pris: 18, kategori: "snacks" },
-    ],
-  },
-];
 
 // ---------- Beløb ----------
 // Sætter punktum som tusindtalsseparator, fx "2340" -> "2.340"

@@ -21,7 +21,21 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Tillad $(PRODUCT_NAME) at bruge kameraet til at scanne dine kvitteringer",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tillad $(PRODUCT_NAME) at hente billeder af kvitteringer fra dine fotos",
+          "cameraPermission": false
+        }
+      ]
     ]
   }
 }

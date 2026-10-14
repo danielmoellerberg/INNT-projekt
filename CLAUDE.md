@@ -73,6 +73,8 @@ er vejledningen kilden.
 `expo-notifications`, `expo-device`, `expo-file-system`, `expo-sharing`, `react-native-reanimated`.
 Ikke Firestore.
 
+**Godkendt uden for kurset:** `expo-image-picker` (vælg et billede af en bon fra telefonens fotos).
+
 ## Kodekonventioner
 
 ### Struktur
@@ -81,6 +83,7 @@ App.js                  Navigation + AppProvider yderst + onAuthStateChanged
 components/             Genbrugelige komponenter og StackComponent.js
 context/AppContext.js   Fælles state (data fra Firebase)
 database/firebase.js    Al Firebase-opsætning ét sted
+services/ai.js          Al AI-kode (aflæsning af kvitteringer). Skærmene kender ikke udbyderen
 screens/                Én fil per skærm
 styles/GlobalStyle.js   Al styling
 ```
@@ -185,6 +188,21 @@ Koden skal kunne forklares til eksamen, så kommentarerne er **mere forklarende*
   `.write` arves nedad og kan ikke tages væk længere nede, og `.validate` køres ikke ved sletning.
 - Kendt begrænsning: brugeren vælger stadig selv sin rolle ved oprettelsen, så reglerne kan ikke
   garantere, at en "leverandør" er en rigtig virksomhed. Det er acceptabelt i en prototype.
+
+### Regler mod snyd med kvitteringer
+- **Dubletter:** hver bon får et aftryk (butik + dato + klokkeslæt + bonens total), som gemmes i
+  `aftryk/{aftryk}`. Et aftryk kan kun skrives én gang og aldrig slettes, på tværs af alle brugere.
+  Kvittering og aftryk gemmes i én samlet `update` på flere stier, så begge dele gemmes eller ingen.
+  En kvittering kan ikke gemmes uden et aftryk (`.validate`).
+- **Ingen redigering bagefter:** en gemt kvittering kan kun oprettes eller slettes, ikke ændres.
+  Sletter man den, bliver aftrykket liggende, så bonen ikke kan scannes igen.
+- **Pris og antal:** antal og varenavn kan ikke rettes. Cashback beregnes ud fra AI'ens aflæsning.
+  Varer med cashback er låst. Rettes en anden pris, gemmes AI'ens pris i `aiPris`.
+- **Dato:** dato, klokkeslæt og total skal kunne læses, og bonen må højst være 14 dage gammel
+  (`MAKS_ALDER_DAGE` i `AppContext.js`).
+- **Begrænsning:** al logik kører i appen på brugerens telefon. En målrettet snyder kan skrive
+  direkte til databasen med et opdigtet aftryk og cashback. Rigtig sikring kræver, at aflæsning og
+  cashback beregnes på en server (fx Firebase Cloud Functions). Det er uden for kurset.
 
 ## API-nøgler og .env
 
