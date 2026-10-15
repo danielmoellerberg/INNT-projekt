@@ -49,8 +49,10 @@ export default function ScanScreen({ navigation }) {
 
   // Behandler et billede af en bon - uanset om det kommer fra kameraet eller galleriet:
   // send til AI -> tjek reglerne mod snyd -> vis resultatet til godkendelse.
+  // base64 sendes til AI'en, mens uri (billedfilen på telefonen) sendes videre, så billedet
+  // kan gemmes sammen med kvitteringen og vises igen senere.
   // Går noget galt, vises en venlig fejlbesked i stedet for, at appen går ned.
-  async function behandlBillede(base64) {
+  async function behandlBillede(base64, uri) {
     setStatus("laeser");
     try {
       // 1. AI'en aflæser kvitteringen (al AI-kode ligger i services/ai.js)
@@ -66,7 +68,7 @@ export default function ScanScreen({ navigation }) {
 
       // 3. Vis resultatet til godkendelse. Intet er gemt endnu.
       setStatus("klar");
-      navigation.navigate("GodkendKvittering", { resultat });
+      navigation.navigate("GodkendKvittering", { resultat, billedeUri: uri });
     } catch (error) {
       setFejlbesked(error.message || "Noget gik galt. Prøv igen.");
       setStatus("fejl");
@@ -80,7 +82,7 @@ export default function ScanScreen({ navigation }) {
     if (!cameraRef.current || !kameraKlar || status !== "klar") return;
     try {
       const billede = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.3 });
-      await behandlBillede(billede.base64);
+      await behandlBillede(billede.base64, billede.uri);
     } catch (error) {
       setFejlbesked("Billedet kunne ikke tages. Prøv igen.");
       setStatus("fejl");
@@ -99,7 +101,7 @@ export default function ScanScreen({ navigation }) {
       });
       // Brugeren fortrød og lukkede galleriet uden at vælge noget
       if (valg.canceled) return;
-      await behandlBillede(valg.assets[0].base64);
+      await behandlBillede(valg.assets[0].base64, valg.assets[0].uri);
     } catch (error) {
       setFejlbesked("Billedet kunne ikke hentes fra dine fotos. Prøv igen.");
       setStatus("fejl");

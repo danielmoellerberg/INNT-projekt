@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import PrimaryButton from "../components/PrimaryButton";
 import StoreLogo from "../components/StoreLogo";
+import { gemKvitteringBillede } from "../components/KvitteringBilleder";
 import { useApp } from "../context/AppContext";
 import { KATEGORI_NAVNE, formaterKroner, formaterTidspunkt } from "../data/const";
 import { GlobalStyle, Colors } from "../styles/GlobalStyle";
@@ -24,8 +25,8 @@ function tekstTilPris(tekst) {
 }
 
 export default function GodkendKvitteringScreen({ route, navigation }) {
-  // Resultatet fra AI'en sendes med fra ScanScreen (mønster fra 05 og 07)
-  const { resultat } = route.params;
+  // Resultatet fra AI'en og billedet af bonen sendes med fra ScanScreen (mønster fra 05 og 07)
+  const { resultat, billedeUri } = route.params;
   const { gemKvittering, cashbackForVare } = useApp();
 
   // Varerne i state, så de kan rettes. Prisen gemmes som tekst ("23,95"), mens brugeren skriver.
@@ -84,6 +85,15 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
           return gemt;
         }),
       });
+      // Billedet af bonen gemmes på telefonen under kvitteringens id, så det kan vises på
+      // KvitteringScreen. Fejler det, er kvitteringen stadig gemt - den får bare intet billede.
+      if (billedeUri) {
+        try {
+          await gemKvitteringBillede(kvittering.id, billedeUri);
+        } catch (error) {
+          console.error("Kunne ikke gemme billedet af kvitteringen", error);
+        }
+      }
       // Tilbage til kameraet i Scan-fanen, og åbn derefter kvitteringen i Hjem-fanens stack.
       // initial: false lægger Hjem nedenunder, så tilbage-knappen fører til Hjem.
       navigation.goBack();

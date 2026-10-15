@@ -1,18 +1,31 @@
 // KvitteringScreen: detaljer om én kvittering i Hjem-stacken (Figma: 04 Kvittering).
 // Genbrugt fra opgave 1: kvitteringen sendes med som parameter, og varer med cashback markeres.
 // Nyt i opgave 2: opsætningen følger Figma, og kvitteringen kommer fra Firebase.
+// Er billedet af bonen gemt på telefonen, vises et lille billede i højre side af toppen.
+// Trykker man på det, åbnes den rigtige kvittering i fuld størrelse (KvitteringBilledeScreen).
 
-import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, Image, Pressable } from "react-native";
 
 import StoreLogo from "../components/StoreLogo";
+import { hentKvitteringBillede } from "../components/KvitteringBilleder";
 import { formaterKroner, formaterTidspunkt } from "../data/const";
 import { GlobalStyle } from "../styles/GlobalStyle";
 
-export default function KvitteringScreen({ route }) {
+export default function KvitteringScreen({ route, navigation }) {
   // Kvitteringen sendes med fra Hjem eller Scan med navigation.navigate (mønster fra 05 og 07)
   const { kvittering } = route.params;
   const varer = kvittering.varer || [];
+  // Stien til billedet af bonen, eller null hvis der ikke er gemt et billede på denne telefon
+  const [billede, setBillede] = useState(null);
+
+  // Leder efter billedet, når skærmen åbnes. Det ligger i appens mappe under kvitteringens id
+  // (se components/KvitteringBilleder.js). Ældre kvitteringer har intet billede.
+  useEffect(() => {
+    hentKvitteringBillede(kvittering.id)
+      .then(setBillede)
+      .catch(() => setBillede(null));
+  }, [kvittering.id]);
 
   // Hvor mange varer gav cashback? Bruges i det gule banner øverst
   const varerMedCashback = varer.filter((vare) => vare.cashback > 0).length;
@@ -21,13 +34,24 @@ export default function KvitteringScreen({ route }) {
     <ScrollView style={GlobalStyle.skaerm} contentContainerStyle={GlobalStyle.skaermIndhold}>
       <View style={GlobalStyle.kvitteringHeader}>
         <StoreLogo butik={kvittering.butik} stor />
-        <View>
+        <View style={GlobalStyle.kvitteringHeaderTekst}>
           <Text style={GlobalStyle.kvitteringTitel}>{kvittering.butik}</Text>
           <Text style={GlobalStyle.kvitteringUndertitel}>
             {kvittering.adresse ? kvittering.adresse + " · " : ""}
             {formaterTidspunkt(kvittering.dato)}
           </Text>
         </View>
+        {/* Lille billede af bonen. Trykket sender stien med til fuldskærmsvisningen. */}
+        {billede ? (
+          <Pressable
+            onPress={() => navigation.navigate("KvitteringBillede", { uri: billede })}
+            accessibilityRole="button"
+            accessibilityLabel="Vis billedet af kvitteringen"
+            style={({ pressed }) => [GlobalStyle.bonMiniature, pressed && GlobalStyle.trykket]}
+          >
+            <Image source={{ uri: billede }} style={GlobalStyle.bonMiniatureBillede} />
+          </Pressable>
+        ) : null}
       </View>
 
       {/* Banneret vises kun, hvis kvitteringen faktisk gav cashback */}

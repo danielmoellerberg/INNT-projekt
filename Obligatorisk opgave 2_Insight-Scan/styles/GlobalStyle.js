@@ -62,6 +62,7 @@ export const Radius = {
   sm: 10,
   md: 16,
   lg: 24,
+  xl: 28, // arket under kortet på Butikker
   pill: 999, // helt rund ende, fx knapper og den flydende tab bar
 };
 
@@ -106,6 +107,10 @@ export const Shadow = {
 // Luft i bunden af lister og skærme, så den flydende tab bar ikke dækker sidste række.
 // 124 er den samme bundmargen, som Figma-skærmene bruger.
 const TAB_BAR_LUFT = 124;
+
+// Kortets højde på Butikker (Figma: 420). Arket under kortet lægger sig 32 punkter op over kortet.
+const KORT_HOEJDE = 420;
+const ARK_OVERLAP = 32;
 
 // Dynamisk bredde, fx til fremdriftsbjælker, hvor bredden afhænger af data.
 // Den ligger her, så selv dynamisk styling er samlet i denne fil (ingen inline-styles i skærmene).
@@ -284,6 +289,22 @@ export const GlobalStyle = StyleSheet.create({
   storeLogoStorTekst: {
     ...Typography.title2,
     color: Colors.primary,
+  },
+  // Markøren på kortet (Figma: Pin): rund, grøn med hvid kant og blød skygge
+  storeLogoPin: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.pill,
+    borderWidth: 2,
+    borderColor: Colors.onPrimary,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Shadow.glass,
+  },
+  storeLogoPinTekst: {
+    ...Typography.headline,
+    color: Colors.onPrimary,
   },
 
   // Fælles for tekstkolonnen i rækker og kort: navn øverst, info under
@@ -724,6 +745,44 @@ export const GlobalStyle = StyleSheet.create({
     ...Typography.subheadline,
     color: Colors.textSecondary,
   },
+  kvitteringHeaderTekst: {
+    flex: 1, // fylder pladsen, så billedet af bonen skubbes helt ud til højre
+  },
+  // Lille billede af bonen i højre side (bon-format: højere end bredt)
+  bonMiniature: {
+    width: 52,
+    height: 68,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Colors.separator,
+    backgroundColor: Colors.surface,
+    overflow: "hidden",
+  },
+  bonMiniatureBillede: {
+    width: "100%",
+    height: "100%",
+  },
+
+  // ---------- KvitteringBilledeScreen ----------
+  bonFuldSkaerm: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+  },
+  bonFuldIndhold: {
+    flexGrow: 1,
+    padding: Spacing.lg,
+  },
+  bonFuldBillede: {
+    flex: 1,
+    width: "100%",
+    borderRadius: Radius.sm,
+  },
+  bonFuldHint: {
+    ...Typography.footnote,
+    color: Colors.textTertiary,
+    textAlign: "center",
+    paddingBottom: Spacing.xl,
+  },
   cashbackBanner: {
     backgroundColor: Colors.cashbackSoft,
     borderRadius: Radius.md,
@@ -1127,23 +1186,128 @@ export const GlobalStyle = StyleSheet.create({
   },
 
   // ---------- ButikkerScreen ----------
-  // Rækkerne lægges i hvert sit hvide felt, men første og sidste får runde hjørner,
-  // så listen ser ud som ét samlet kort
-  butikRække: {
+  butikkerSkaerm: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+  },
+  // Kortet øverst. Knappen og infoboksen ligger ovenpå kortet (position absolute).
+  kortOmraade: {
+    height: KORT_HOEJDE,
+  },
+  // Når arket er foldet ned, fylder kortet al pladsen over arket
+  kortOmraadeFuld: {
+    flex: 1,
+  },
+  // Kortet fylder hele kortområdet (top, bund og sider = 0)
+  kort: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  kortKnapper: {
+    position: "absolute",
+    top: 0,
+    right: Spacing.screen,
+    paddingTop: Spacing.sm,
+  },
+  minPlaceringKnap: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: Colors.glassStroke,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Shadow.glass,
+  },
+  // Lille boks med den butik, man har trykket på. Ligger lige over arket.
+  butikBoks: {
+    position: "absolute",
+    left: Spacing.screen,
+    right: Spacing.screen,
+    bottom: ARK_OVERLAP + Spacing.md,
     backgroundColor: Colors.surface,
-    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    ...Shadow.glass,
   },
-  butikRækkeFoerste: {
-    borderTopLeftRadius: Radius.md,
-    borderTopRightRadius: Radius.md,
+  butikBoksTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
   },
-  butikRækkeSidste: {
-    borderBottomLeftRadius: Radius.md,
-    borderBottomRightRadius: Radius.md,
+  butikBoksLuk: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  butikSkillelinjeOmraade: {
+  // Arket under kortet (Figma: Ark): hvidt med runde hjørner foroven
+  ark: {
+    flex: 1,
+    marginTop: -ARK_OVERLAP,
     backgroundColor: Colors.surface,
-    paddingHorizontal: Spacing.lg,
+    borderTopLeftRadius: Radius.xl,
+    borderTopRightRadius: Radius.xl,
+    paddingTop: Spacing.sm,
+    ...Shadow.glass,
+  },
+  // Arket foldet ned: kun toppen vises, og den holdes fri af den flydende tab bar
+  arkFoldet: {
+    flex: 0,
+    paddingBottom: TAB_BAR_LUFT,
+  },
+  arkTop: {
+    paddingHorizontal: Spacing.screen,
+  },
+  arkGrabber: {
+    alignSelf: "center",
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: Colors.separator,
+  },
+  arkIndhold: {
+    paddingHorizontal: Spacing.screen,
+    paddingBottom: TAB_BAR_LUFT,
+  },
+  arkHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+  arkHeaderTekst: {
+    flex: 1,
+    gap: 2,
+  },
+  arkTitel: {
+    ...Typography.title2,
+    color: Colors.text,
+  },
+  // Besked i arket: mangler placering, henter, eller fejl
+  arkBesked: {
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.bg,
+  },
+  arkBeskedRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  arkBeskedTekst: {
+    ...Typography.subheadline,
+    color: Colors.textSecondary,
+    flex: 1,
   },
 
   // ---------- IndstillingerScreen ----------

@@ -1,7 +1,7 @@
 // StoreRow: én butik med en "Jeg handler her"-kontakt (Figma: StoreRow).
 // Kontakten er React Natives indbyggede Switch, som på iOS er systemets egen kontakt.
 // Grøn betyder "til" som i Figma. Om brugeren handler i butikken er en lokal præference,
-// som skal gemmes med AsyncStorage (mønster fra øvelse 08), når Butikker-skærmen bygges.
+// som gemmes med AsyncStorage (mønster fra øvelse 08) via skiftButik i AppContext.
 
 import React from "react";
 import { View, Text, Switch } from "react-native";
