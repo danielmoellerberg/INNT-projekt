@@ -36,10 +36,7 @@ export default function KvitteringScreen({ route, navigation }) {
         <StoreLogo butik={kvittering.butik} stor />
         <View style={GlobalStyle.kvitteringHeaderTekst}>
           <Text style={GlobalStyle.kvitteringTitel}>{kvittering.butik}</Text>
-          <Text style={GlobalStyle.kvitteringUndertitel}>
-            {kvittering.adresse ? kvittering.adresse + " · " : ""}
-            {formaterTidspunkt(kvittering.dato)}
-          </Text>
+          <Text style={GlobalStyle.kvitteringUndertitel}>{formaterTidspunkt(kvittering.dato)}</Text>
         </View>
         {/* Lille billede af bonen. Trykket sender stien med til fuldskærmsvisningen. */}
         {billede ? (

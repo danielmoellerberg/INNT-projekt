@@ -41,7 +41,8 @@
         {
           "locationWhenInUsePermission": "Tillad $(PRODUCT_NAME) at bruge din placering til at vise supermarkeder i nærheden af dig"
         }
-      ]
+      ],
+      "expo-status-bar"
     ]
   }
 }

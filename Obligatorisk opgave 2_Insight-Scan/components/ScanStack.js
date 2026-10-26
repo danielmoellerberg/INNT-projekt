@@ -1,3 +1,7 @@
+// ScanStack: stack-navigation inde i "Scan"-fanen (samme mønster som StackComponent til Hjem).
+// Først kameraet, derefter godkendelse af det, AI'en har aflæst. Intet gemmes, før brugeren
+// har trykket "Gem kvittering" på godkendelsesskærmen.
+
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 
@@ -8,9 +12,6 @@ import { GlobalStyle, Colors } from "../styles/GlobalStyle";
 
 const Stack = createStackNavigator();
 
-// Stack-navigation inde i "Scan"-fanen (samme mønster som StackComponent til Hjem).
-// Først kameraet, derefter godkendelse af det, AI'en har aflæst. Intet gemmes, før brugeren
-// har trykket "Gem kvittering" på godkendelsesskærmen.
 export default function ScanStack() {
   return (
     <Stack.Navigator

@@ -64,7 +64,7 @@ er vejledningen kilden.
   lært, så den kan forklares til eksamen.
 - **Spørg altid først**, før du introducerer et bibliotek, en hook eller en metode, som ikke er
   brugt i øvelserne eller i opgave 1. Foreslå, forklar hvorfor, og vent på svar.
-- Installer pakker med `npx expo install`, så versionerne passer til **Expo SDK 57**.
+- Installer pakker med `npx expo install`, så versionerne passer til **Expo SDK 58**.
 - UI-tekst er på dansk.
 
 **Kendte biblioteker** (må bruges uden at spørge): `@react-navigation/native`, `/bottom-tabs`,

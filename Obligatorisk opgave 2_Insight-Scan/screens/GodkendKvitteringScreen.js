@@ -30,8 +30,13 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
   const { gemKvittering, cashbackForVare } = useApp();
 
   // Varerne i state, så de kan rettes. Prisen gemmes som tekst ("23,95"), mens brugeren skriver.
+  // Hver vare får et fast id, så React kan holde styr på rækkerne, når en vare slettes.
   const [varer, setVarer] = useState(
-    resultat.varer.map((vare) => ({ ...vare, prisTekst: vare.pris.toFixed(2).replace(".", ",") }))
+    resultat.varer.map((vare, index) => ({
+      ...vare,
+      id: String(index),
+      prisTekst: vare.pris.toFixed(2).replace(".", ","),
+    }))
   );
   const [gemmer, setGemmer] = useState(false);
 
@@ -136,7 +141,7 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
           // Viser cashback allerede nu, hvis varen har et tilbud
           const cashback = cashbackForVare(vare);
           return (
-            <View key={index} style={GlobalStyle.godkendVareRække}>
+            <View key={vare.id} style={GlobalStyle.godkendVareRække}>
               <View style={GlobalStyle.vareNavnKolonne}>
                 <Text style={GlobalStyle.vareNavn}>{vare.navn}</Text>
                 <View style={GlobalStyle.vareMeta}>

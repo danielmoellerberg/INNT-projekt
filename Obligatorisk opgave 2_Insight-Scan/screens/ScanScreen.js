@@ -23,6 +23,10 @@ import { useApp } from "../context/AppContext";
 import { laesKvittering } from "../services/ai";
 import { GlobalStyle, Colors } from "../styles/GlobalStyle";
 
+// Billedkvalitet fra 0 til 1. Lav kvalitet giver et lille billede, der sendes hurtigt til AI'en,
+// men stadig kan læses. Bruges både til kameraet og galleriet.
+const BILLED_KVALITET = 0.3;
+
 export default function ScanScreen({ navigation }) {
   const { tjekKvittering } = useApp();
   // Kameratilladelse (mønster fra 07): permission fortæller, om vi har lov,
@@ -76,12 +80,11 @@ export default function ScanScreen({ navigation }) {
   }
 
   // Udløseren: tag et billede med kameraet.
-  // base64 er billedet som tekst, så det kan sendes til AI'en. Lav kvalitet giver et lille
-  // billede, der sendes hurtigt, men stadig kan læses.
+  // base64 er billedet som tekst, så det kan sendes til AI'en.
   async function tagBillede() {
     if (!cameraRef.current || !kameraKlar || status !== "klar") return;
     try {
-      const billede = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.3 });
+      const billede = await cameraRef.current.takePictureAsync({ base64: true, quality: BILLED_KVALITET });
       await behandlBillede(billede.base64, billede.uri);
     } catch (error) {
       setFejlbesked("Billedet kunne ikke tages. Prøv igen.");
@@ -96,7 +99,7 @@ export default function ScanScreen({ navigation }) {
     try {
       const valg = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        quality: 0.3,
+        quality: BILLED_KVALITET,
         base64: true,
       });
       // Brugeren fortrød og lukkede galleriet uden at vælge noget
