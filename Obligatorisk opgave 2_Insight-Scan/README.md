@@ -5,7 +5,7 @@ Daniel Møller Berg og Amalie Sharon Koefoed-Hansen
 
 ## Links
 
-- Kode på GitHub: https://github.com/danielmoellerberg/INNT-projekt/tree/b7a232eac440c97179cd999fb839709660ba9e05/Obligatorisk%20opgave%202_Insight-Scan
+- Kode på GitHub: https://github.com/danielmoellerberg/INNT-projekt/tree/4dbe45e4853eb3e10a9e33ca1811a287a0d3ec20/Obligatorisk%20opgave%202_Insight-Scan
 
 - Demovideo: https://youtu.be/vWtFURvkmTc
 
