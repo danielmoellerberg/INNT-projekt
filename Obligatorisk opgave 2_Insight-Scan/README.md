@@ -3,6 +3,12 @@
 Obligatorisk opgave 2 – Innovation og ny teknologi
 Daniel Møller Berg og Amalie Sharon Koefoed-Hansen
 
+## Links
+
+- Kode på GitHub: https://github.com/danielmoellerberg/INNT-projekt/tree/b7a232eac440c97179cd999fb839709660ba9e05/Obligatorisk%20opgave%202_Insight-Scan
+
+- Demovideo: https://youtu.be/vWtFURvkmTc
+
 ## Om appen
 
 Insight-Scan er en app hvor man scanner sine madkvitteringer. Appen viser hvor mange penge
@@ -10,7 +16,8 @@ man har brugt i fx Netto, Rema 1000, Føtex og Lidl, giver cashback på udvalgte
 en simpel indsigt i hvad man køber – fx hvor meget der går til snacks i forhold til protein.
 
 I opgave 2 er appen blevet en tosidet platform. Kunden scanner sine kvitteringer og optjener
-cashback, og leverandører (fx et brand) kan oprette cashback-tilbud, som kunderne kan se.
+cashback på tilbud fra leverandører (fx et brand). Leverandørsiden, hvor tilbuddene skal
+oprettes, er endnu en mock-up.
 
 Det nye i opgave 2:
 
@@ -28,11 +35,6 @@ Det nye i opgave 2:
 Påmindelsen fra opgave 1 er beholdt: hvis man ikke har scannet i 5 dage, får man en påmindelse
 øverst i appen, fordi glemsel var det største problem i den første brugerundersøgelse.
 
-## Links
-
-- Kode på GitHub: [indsæt link]
-- Demovideo: [indsæt link]
-
 ## Sådan starter du appen
 
 1. Åbn en terminal i mappen `Obligatorisk opgave 2_Insight-Scan`
@@ -41,6 +43,9 @@ Påmindelsen fra opgave 1 er beholdt: hvis man ikke har scannet i 5 dage, får m
 4. Indsæt nøglerne til Firebase og AI'en (OpenAI) i `.env`. Nøglerne er ikke med på GitHub
 5. Kør `npx expo start --clear`
 6. Scan QR-koden med Expo Go på din telefon (Expo SDK 58)
+
+Nøglerne til Firebase og OpenAI er givet til underviserne separat på Canvas. Uden en
+OpenAI-nøgle kan appen ikke aflæse boner, men resten af appen virker.
 
 ## Testbrugere
 
@@ -73,3 +78,7 @@ Ansvaret for udviklingen og kodningen af de enkelte skærme er fordelt som angiv
 Kvitteringer, brugere og tilbud gemmes i Firebase. De valgte kæder og indstillinger gemmes på
 telefonen med AsyncStorage, og billedet af bonen gemmes i appens egen mappe på telefonen.
 Supermarkederne på kortet hentes fra OpenStreetMap.
+
+## AI-assistent
+
+Koden er udviklet med Claude Code som AI-assistent.
