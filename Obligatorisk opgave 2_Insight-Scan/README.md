@@ -44,8 +44,8 @@ Påmindelsen fra opgave 1 er beholdt: hvis man ikke har scannet i 5 dage, får m
 5. Kør `npx expo start --clear`
 6. Scan QR-koden med Expo Go på din telefon (Expo SDK 58)
 
-Nøglerne til Firebase og OpenAI er givet til underviserne separat på Canvas. Uden en
-OpenAI-nøgle kan appen ikke aflæse boner, men resten af appen virker.
+API-nøglerne til Firebase og OpenAI er vedhæftet som bilag i afleveringen på Canvas, hvor I
+kan tilgå dem. Uden en OpenAI-nøgle kan appen ikke aflæse boner, men resten af appen virker.
 
 ## Testbrugere
 
