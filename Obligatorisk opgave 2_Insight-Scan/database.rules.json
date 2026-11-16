@@ -19,7 +19,14 @@
         "kvitteringer": {
           "$kvitteringId": {
             ".write": "auth != null && auth.uid === $uid && (!data.exists() || !newData.exists())",
-            ".validate": "newData.hasChildren(['butik', 'dato', 'total', 'cashback', 'varer', 'aftryk']) && newData.parent().parent().parent().parent().child('aftryk').child(newData.child('aftryk').val()).val() === true"
+            ".validate": "newData.hasChildren(['butik', 'dato', 'total', 'aiTotal', 'cashbackBasis', 'cashbackBonus', 'cashback', 'varer', 'aftryk']) && newData.parent().parent().parent().parent().child('aftryk').child(newData.child('aftryk').val()).val() === true && newData.child('aiTotal').isNumber() && newData.child('aiTotal').val() > 0 && newData.child('cashbackBasis').isNumber() && newData.child('cashbackBasis').val() >= 0 && newData.child('cashbackBasis').val() <= newData.child('aiTotal').val() * 0.005 + 0.01 && newData.child('cashbackBonus').isNumber() && newData.child('cashbackBonus').val() >= 0 && newData.child('cashback').val() <= newData.child('cashbackBasis').val() + newData.child('cashbackBonus').val() + 0.01"
+          }
+        },
+
+        "udbetalinger": {
+          "$udbetalingId": {
+            ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.exists()",
+            ".validate": "newData.hasChildren(['beloeb', 'metode', 'tidspunkt', 'status']) && newData.child('beloeb').isNumber() && newData.child('beloeb').val() >= 250 && newData.child('metode').isString() && newData.child('tidspunkt').isNumber() && newData.child('status').val() === 'anmodet'"
           }
         },
 

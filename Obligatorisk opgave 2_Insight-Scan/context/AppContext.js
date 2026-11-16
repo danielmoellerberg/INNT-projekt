@@ -12,19 +12,34 @@
 // bruger dem, automatisk igen med de nye tal.
 //
 // HVOR KOMMER DATA FRA?
-// - Kvitteringer og tilbud: Firebase Realtime Database, læst live med onValue (mønster fra 05).
+// - Kvitteringer, tilbud og indkøbsliste: Firebase Realtime Database, læst live med onValue
+//   (mønster fra 05).
 // - Præferencer (valgte butikker og notifikationer): AsyncStorage på telefonen (mønster fra 08).
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, onValue, push, update } from "firebase/database";
+import { ref, onValue, push, update, remove } from "firebase/database";
 
 import { rtdb } from "../database/firebase";
+import { findTilbud } from "../services/offers";
 
 // Faste nøgler til AsyncStorage (mønster fra 08)
 const BUTIKKER_NOEGLE = "VALGTE_BUTIKKER";
 const INDSTILLINGER_NOEGLE = "INDSTILLINGER";
 const STANDARD_INDSTILLINGER = { nyeTilbud: true, paamindScan: true };
+
+// ---------- Cashback-modellen ----------
+// Pivot efter vores Think Out Loud-test: brugerne forstod ikke, hvorfor de kun fik cashback
+// på enkelte varer fra mærkernes tilbud, og de fleste boner gav 0 kr. Nu får brugeren altid
+// en lille procentdel af hele bonens total (basis), ligesom cashback på et betalingskort.
+// Sponsorerede tilbud fra mærkerne i offers/ kan give ekstra cashback oveni (bonus).
+// Kvitteringer gemt før pivoten beholder deres gamle cashback - beregningen gælder kun nye.
+export const CASHBACK_SATS = 0.005; // 0,5 % af bonens total
+// Satsen som tekst til skærmene, fx "0,5 %"
+export const CASHBACK_SATS_TEKST = String(CASHBACK_SATS * 100).replace(".", ",") + " %";
+// Cashback kan udbetales, når den tilgængelige saldo når dette beløb (i kroner).
+// Den eneste grænse i appen: Hjem, Udbetaling og Indstillinger bruger alle denne konstant.
+export const UDBETALING_MIN = 250;
 
 // Firebase gemmer lister som objekter: { id1: {...}, id2: {...} }.
 // Her laver vi dem om til et array, hvor id'et ligger på hvert element (mønster fra 05).
@@ -33,23 +48,12 @@ function tilListe(data) {
   return Object.keys(data).map((id) => ({ id: id, ...data[id] }));
 }
 
-// Gør et varenavn sammenligneligt: små bogstaver og kun bogstaver og tal.
-// Så bliver "Revet ost 175g" til "revetost175g" og "Revet ost" til "revetost".
-function normaliser(navn) {
-  return String(navn).toLowerCase().replace(/[^a-z0-9æøå]/g, "");
-}
-
-// Finder tilbuddet på en vare. Navnet på bonen er sjældent helt det samme som i tilbuddet
-// (fx "Revet ost 175g" og "Revet ost"), så vi tjekker, om det ene navn indeholder det andet.
-function findTilbud(alleTilbud, varenavn) {
-  const vare = normaliser(varenavn);
-  return alleTilbud.find((t) => {
-    const tilbudsvare = normaliser(t.vare);
-    return tilbudsvare && (vare.includes(tilbudsvare) || tilbudsvare.includes(vare));
-  });
-}
-
 // ---------- Regler mod snyd ----------
+// Afrunder til hele øre, så 1.5649999 bliver 1.56
+function tilOere(beloeb) {
+  return Math.round(beloeb * 100) / 100;
+}
+
 // Hvor gammel må en bon højst være? Så kan man ikke scanne en bunke gamle boner.
 const MAKS_ALDER_DAGE = 14;
 const MS_PER_DAG = 1000 * 60 * 60 * 24;
@@ -93,6 +97,10 @@ export const AppContext = createContext();
 export function AppProvider({ user, profil, children }) {
   const [kvitteringer, setKvitteringer] = useState([]);
   const [tilbud, setTilbud] = useState([]);
+  const [indkoebsliste, setIndkoebsliste] = useState([]);
+  const [udbetalinger, setUdbetalinger] = useState([]);
+  // Hvilke kommende funktioner brugeren har bedt om besked om, fx { madplan: { tidspunkt } }
+  const [interesse, setInteresse] = useState({});
   const [valgteButikker, setValgteButikker] = useState({});
   const [indstillinger, setIndstillinger] = useState(STANDARD_INDSTILLINGER);
   // Påmindelsesbanneret kan lukkes resten af sessionen (fra opgave 1)
@@ -136,6 +144,47 @@ export function AppProvider({ user, profil, children }) {
     return unsubscribe;
   }, [user]);
 
+  // Lyt på brugerens indkøbsliste: users/{uid}/indkoebsliste.
+  // Varer tilføjet før indkøbslisten blev bygget, har feltet "vare" i stedet for "navn",
+  // så det rettes her, og skærmen kan altid bruge vare.navn.
+  useEffect(() => {
+    if (!user) {
+      setIndkoebsliste([]);
+      return;
+    }
+    const unsubscribe = onValue(ref(rtdb, `users/${user.uid}/indkoebsliste`), (snapshot) => {
+      const liste = tilListe(snapshot.val()).map((v) => ({ ...v, navn: v.navn || v.vare || "" }));
+      setIndkoebsliste(liste);
+    });
+    return unsubscribe;
+  }, [user]);
+
+  // Lyt på brugerens udbetalinger: users/{uid}/udbetalinger.
+  // De trækkes fra den optjente cashback, så saldoen på Hjem falder efter en udbetaling.
+  useEffect(() => {
+    if (!user) {
+      setUdbetalinger([]);
+      return;
+    }
+    const unsubscribe = onValue(ref(rtdb, `users/${user.uid}/udbetalinger`), (snapshot) => {
+      setUdbetalinger(tilListe(snapshot.val()));
+    });
+    return unsubscribe;
+  }, [user]);
+
+  // Lyt på brugerens interesse for kommende funktioner: users/{uid}/interesse (fake door-test,
+  // se MadplanScreen). Så husker knappen "Du får besked", også efter genstart.
+  useEffect(() => {
+    if (!user) {
+      setInteresse({});
+      return;
+    }
+    const unsubscribe = onValue(ref(rtdb, `users/${user.uid}/interesse`), (snapshot) => {
+      setInteresse(snapshot.val() || {});
+    });
+    return unsubscribe;
+  }, [user]);
+
   // Hent de lokale præferencer fra AsyncStorage én gang, når appen starter
   useEffect(() => {
     async function hentPraeferencer() {
@@ -155,11 +204,24 @@ export function AppProvider({ user, profil, children }) {
     hentPraeferencer();
   }, []);
 
-  // Beregner, hvor meget cashback en vare giver, ud fra tilbuddene i offers/.
-  // Cashback gives per stk., så 2 stk. af en vare med tilbud giver dobbelt cashback.
-  function cashbackForVare(vare) {
+  // Ekstra cashback (bonus) på én vare fra et sponsoreret tilbud i offers/.
+  // Bonussen gives per stk., så 2 stk. af en vare med tilbud giver dobbelt bonus.
+  function bonusForVare(vare) {
     const match = findTilbud(tilbud, vare.navn);
-    return match ? Math.round(match.cashback * vare.antal * 100) / 100 : 0;
+    return match ? tilOere(match.cashback * vare.antal) : 0;
+  }
+
+  // Beregner cashback for hele bonen:
+  // - basis: CASHBACK_SATS af AI'ens aflæste total (aiTotal), afrundet til hele øre.
+  //   Vi bruger AI'ens total og ikke de priser, brugeren kan rette, så man ikke kan få mere
+  //   cashback ved at skrive højere priser.
+  // - bonus: summen af ekstra cashback fra sponsorerede tilbud på bonens varer.
+  // Returnerer også varerne med deres bonus, så skærmene kan vise, hvilke varer gav ekstra.
+  function beregnCashback(aiTotal, varer) {
+    const varerMedBonus = varer.map((vare) => ({ ...vare, bonus: bonusForVare(vare) }));
+    const basis = tilOere(aiTotal * CASHBACK_SATS);
+    const bonus = tilOere(varerMedBonus.reduce((sum, v) => sum + v.bonus, 0));
+    return { basis: basis, bonus: bonus, cashback: tilOere(basis + bonus), varer: varerMedBonus };
   }
 
   // Tjekker en aflæst bon, før brugeren får den vist til godkendelse.
@@ -193,18 +255,23 @@ export function AppProvider({ user, profil, children }) {
   // afviser reglerne hele skrivningen, så en bon aldrig kan gemmes to gange.
   // Returnerer den gemte kvittering med id, så den kan åbnes bagefter.
   async function gemKvittering(kvittering) {
-    // Cashback beregnes ud fra AI'ens aflæsning af navn og antal - brugeren kan ikke ændre dem
-    const varer = kvittering.varer.map((vare) => ({ ...vare, cashback: cashbackForVare(vare) }));
-    const aftryk = lavAftryk(kvittering.butik, kvittering.dato, kvittering.bonTotal);
+    // Cashback beregnes ud fra AI'ens aflæste total og AI'ens varenavne og antal,
+    // som brugeren ikke kan ændre på godkendelsesskærmen
+    const beregning = beregnCashback(kvittering.aiTotal, kvittering.varer);
+    const aftryk = lavAftryk(kvittering.butik, kvittering.dato, kvittering.aiTotal);
 
     const nyKvittering = {
       butik: kvittering.butik,
       dato: kvittering.dato,
-      // Total er summen af de godkendte varer, så den passer, hvis brugeren har slettet en vare
-      total: Math.round(varer.reduce((sum, v) => sum + v.pris, 0) * 100) / 100,
-      bonTotal: kvittering.bonTotal, // totalen, som den står på bonen
-      cashback: Math.round(varer.reduce((sum, v) => sum + v.cashback, 0) * 100) / 100,
-      varer: varer,
+      // Total er summen af de godkendte varer, så den passer, hvis brugeren har slettet en vare.
+      // Den bruges til forbrug på Hjem, ikke til cashback.
+      total: tilOere(beregning.varer.reduce((sum, v) => sum + v.pris, 0)),
+      aiTotal: kvittering.aiTotal, // totalen, som AI'en læste den på bonen (låst)
+      // Fordelingen gemmes, så Kvittering-skærmen kan vise basis og bonus hver for sig
+      cashbackBasis: beregning.basis,
+      cashbackBonus: beregning.bonus,
+      cashback: beregning.cashback,
+      varer: beregning.varer,
       aftryk: aftryk,
       aflaestAfAI: true, // så vi senere kan se, at varerne er aflæst af AI og godkendt af brugeren
     };
@@ -225,12 +292,64 @@ export function AppProvider({ user, profil, children }) {
     return { id: id, ...nyKvittering };
   }
 
-  // Tilføjer et tilbud til brugerens indkøbsliste i Firebase (update, mønster fra 05)
-  async function tilfoejTilIndkoebsliste(etTilbud) {
+  // ---------- Indkøbslisten (users/{uid}/indkoebsliste) ----------
+  // Hver vare har: navn, butik (kæde), pris, cashback, afkrydset og tilfoejet (tidspunkt).
+
+  // Tilføjer et tilbud fra offers/. Tilbuddets id bruges som nøgle (update), så samme tilbud
+  // ikke kommer på listen to gange (mønster fra 05).
+  async function tilfoejTilbudTilListe(etTilbud) {
     await update(ref(rtdb, `users/${user.uid}/indkoebsliste/${etTilbud.id}`), {
-      vare: etTilbud.vare,
+      navn: etTilbud.vare,
       butik: etTilbud.butik,
+      pris: etTilbud.pris,
+      cashback: etTilbud.cashback || 0,
+      gyldig: etTilbud.gyldig || null, // fx "til søndag", vises under varen
+      afkrydset: false,
       tilfoejet: Date.now(),
+    });
+  }
+
+  // Tilføjer en vare, brugeren selv har skrevet. Den har ingen butik eller pris endnu.
+  // push giver et nyt, unikt id (mønster fra 05).
+  async function tilfoejEgenVare(navn) {
+    await push(ref(rtdb, `users/${user.uid}/indkoebsliste`), {
+      navn: navn,
+      butik: "",
+      pris: 0,
+      cashback: 0,
+      afkrydset: false,
+      tilfoejet: Date.now(),
+    });
+  }
+
+  // Krydser en vare af eller fjerner krydset igen
+  async function skiftAfkrydset(id, afkrydset) {
+    await update(ref(rtdb, `users/${user.uid}/indkoebsliste/${id}`), { afkrydset: afkrydset });
+  }
+
+  // Sletter én vare (remove, mønster fra 05)
+  async function sletFraListe(id) {
+    await remove(ref(rtdb, `users/${user.uid}/indkoebsliste/${id}`));
+  }
+
+  // Sletter alle afkrydsede varer i én skrivning: update med null på flere stier sletter dem
+  async function rydAfkrydsede() {
+    const sletninger = {};
+    indkoebsliste
+      .filter((vare) => vare.afkrydset)
+      .forEach((vare) => {
+        sletninger[`users/${user.uid}/indkoebsliste/${vare.id}`] = null;
+      });
+    await update(ref(rtdb), sletninger);
+  }
+
+  // Flytter en vare til en billigere butik: butik, pris og cashback skiftes til tilbuddets
+  async function flytVare(id, etTilbud) {
+    await update(ref(rtdb, `users/${user.uid}/indkoebsliste/${id}`), {
+      butik: etTilbud.butik,
+      pris: etTilbud.pris,
+      cashback: etTilbud.cashback || 0,
+      gyldig: etTilbud.gyldig || null,
     });
   }
 
@@ -256,8 +375,34 @@ export function AppProvider({ user, profil, children }) {
     }
   }
 
-  // Den samlede cashback er summen af cashback på alle kvitteringer
-  const saldo = kvitteringer.reduce((sum, k) => sum + (k.cashback || 0), 0);
+  // Gemmer, at brugeren vil have besked, når en kommende funktion er klar (fake door-test).
+  // Tidspunktet gemmes, så vi senere kan se, hvornår interessen opstod.
+  async function visInteresse(funktion) {
+    await update(ref(rtdb, `users/${user.uid}/interesse`), {
+      [funktion]: { tidspunkt: Date.now() },
+    });
+  }
+
+  // ---------- Udbetaling (simuleret) ----------
+  // Der sendes INGEN rigtige penge. En udbetaling er kun en anmodning, der gemmes i Firebase,
+  // så saldoen falder. Rigtig udbetaling kræver Stripe Connect, og det skal ske på en server
+  // (fx Firebase Cloud Functions): serveren tjekker saldoen, kalder Stripe med en hemmelig nøgle,
+  // som aldrig må ligge i appen, og opdaterer status fra "anmodet" til "udbetalt".
+  // Databasereglerne sikrer, at en anmodning kun kan oprettes - ikke ændres eller slettes.
+  async function anmodUdbetaling(beloeb, metode) {
+    await push(ref(rtdb, `users/${user.uid}/udbetalinger`), {
+      beloeb: beloeb,
+      metode: metode, // den maskerede tekst, fx "Konto ••••5678" - aldrig det fulde nummer
+      tidspunkt: Date.now(),
+      status: "anmodet",
+    });
+  }
+
+  // Tilgængelig cashback = al optjent cashback fra kvitteringer minus alt, der er udbetalt.
+  // Afrundet til hele øre, så fx 262.39999 bliver 262.4.
+  const optjent = kvitteringer.reduce((sum, k) => sum + (k.cashback || 0), 0);
+  const udbetalt = udbetalinger.reduce((sum, u) => sum + (u.beloeb || 0), 0);
+  const saldo = tilOere(optjent - udbetalt);
 
   return (
     <AppContext.Provider
@@ -266,15 +411,24 @@ export function AppProvider({ user, profil, children }) {
         profil,
         kvitteringer,
         tilbud,
+        indkoebsliste,
         saldo,
+        anmodUdbetaling,
+        interesse,
+        visInteresse,
         valgteButikker,
         indstillinger,
         bannerLukket,
         lukBanner: () => setBannerLukket(true),
-        cashbackForVare,
+        beregnCashback,
         tjekKvittering,
         gemKvittering,
-        tilfoejTilIndkoebsliste,
+        tilfoejTilbudTilListe,
+        tilfoejEgenVare,
+        skiftAfkrydset,
+        sletFraListe,
+        rydAfkrydsede,
+        flytVare,
         skiftButik,
         skiftIndstilling,
       }}

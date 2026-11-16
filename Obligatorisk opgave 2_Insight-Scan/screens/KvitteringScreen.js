@@ -1,5 +1,7 @@
 // KvitteringScreen: detaljer om én kvittering i Hjem-stacken (Figma: 04 Kvittering).
-// Genbrugt fra opgave 1: kvitteringen sendes med som parameter, og varer med cashback markeres.
+// Genbrugt fra opgave 1: kvitteringen sendes med som parameter.
+// Efter pivoten viser banneret cashback som procent af bonen plus eventuel bonus, og kun varer
+// med ekstra cashback fra et sponsoreret tilbud får et mærke.
 // Nyt i opgave 2: opsætningen følger Figma, og kvitteringen kommer fra Firebase.
 // Er billedet af bonen gemt på telefonen, vises et lille billede i højre side af toppen.
 // Trykker man på det, åbnes den rigtige kvittering i fuld størrelse (KvitteringBilledeScreen).
@@ -8,6 +10,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, Image, Pressable } from "react-native";
 
 import StoreLogo from "../components/StoreLogo";
+import CashbackBanner from "../components/CashbackBanner";
 import { hentKvitteringBillede } from "../components/KvitteringBilleder";
 import { formaterKroner, formaterTidspunkt } from "../data/const";
 import { GlobalStyle } from "../styles/GlobalStyle";
@@ -27,8 +30,11 @@ export default function KvitteringScreen({ route, navigation }) {
       .catch(() => setBillede(null));
   }, [kvittering.id]);
 
-  // Hvor mange varer gav cashback? Bruges i det gule banner øverst
-  const varerMedCashback = varer.filter((vare) => vare.cashback > 0).length;
+  // Ekstra cashback på en vare. Nye kvitteringer gemmer den som "bonus". Kvitteringer fra før
+  // pivoten havde cashback per vare i feltet "cashback", så den vises stadig, som den var.
+  function ekstraPaaVare(vare) {
+    return vare.bonus ?? vare.cashback ?? 0;
+  }
 
   return (
     <ScrollView style={GlobalStyle.skaerm} contentContainerStyle={GlobalStyle.skaermIndhold}>
@@ -51,14 +57,13 @@ export default function KvitteringScreen({ route, navigation }) {
         ) : null}
       </View>
 
-      {/* Banneret vises kun, hvis kvitteringen faktisk gav cashback */}
+      {/* Banneret vises kun, hvis kvitteringen gav cashback. Nye kvitteringer giver altid basis. */}
       {kvittering.cashback > 0 ? (
-        <View style={GlobalStyle.cashbackBanner}>
-          <Text style={GlobalStyle.cashbackBannerTekst}>
-            Du fik cashback på {varerMedCashback} {varerMedCashback === 1 ? "vare" : "varer"}
-          </Text>
-          <Text style={GlobalStyle.cashbackBannerBeloeb}>+ {formaterKroner(kvittering.cashback)}</Text>
-        </View>
+        <CashbackBanner
+          basis={kvittering.cashbackBasis}
+          bonus={kvittering.cashbackBonus}
+          cashback={kvittering.cashback}
+        />
       ) : null}
 
       <View style={GlobalStyle.vareKort}>
@@ -69,11 +74,13 @@ export default function KvitteringScreen({ route, navigation }) {
             <View style={GlobalStyle.vareNavnKolonne}>
               <Text style={GlobalStyle.vareNavn}>{vare.navn}</Text>
               {/* Ekstra linje med antal og/eller cashback - kun hvis der er noget at vise */}
-              {vare.antal > 1 || vare.cashback > 0 ? (
+              {vare.antal > 1 || ekstraPaaVare(vare) > 0 ? (
                 <View style={GlobalStyle.vareMeta}>
                   {vare.antal > 1 ? <Text style={GlobalStyle.vareAntal}>{vare.antal} stk.</Text> : null}
-                  {vare.cashback > 0 ? (
-                    <Text style={GlobalStyle.vareCashback}>+ {formaterKroner(vare.cashback)} cashback</Text>
+                  {ekstraPaaVare(vare) > 0 ? (
+                    <Text style={GlobalStyle.vareCashback}>
+                      + {formaterKroner(ekstraPaaVare(vare))} {vare.bonus !== undefined ? "ekstra" : "cashback"}
+                    </Text>
                   ) : null}
                 </View>
               ) : null}

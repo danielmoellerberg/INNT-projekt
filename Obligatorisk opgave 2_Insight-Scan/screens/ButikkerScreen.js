@@ -12,7 +12,7 @@
 // 6. Tryk på toppen af arket folder det ned, så kortet fylder hele skærmen (og op igen).
 
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, Linking, Platform, Alert } from "react-native";
+import { View, Text, FlatList, Pressable, ActivityIndicator, Linking, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
@@ -22,7 +22,8 @@ import PrimaryButton from "../components/PrimaryButton";
 import StoreRow from "../components/StoreRow";
 import StoreLogo from "../components/StoreLogo";
 import { useApp } from "../context/AppContext";
-import { hentButikker, KAEDER, afstandIMeter, formaterAfstand } from "../services/stores";
+// aabnRute (trin 5) ligger i services/stores.js, fordi Indkøbslisten også bruger den
+import { hentButikker, KAEDER, afstandIMeter, formaterAfstand, aabnRute } from "../services/stores";
 import { GlobalStyle, Colors } from "../styles/GlobalStyle";
 
 // Kortet starter over København, så der er noget at se, mens placeringen hentes,
@@ -132,22 +133,6 @@ export default function ButikkerScreen() {
       }
     } catch (error) {
       Alert.alert("Kunne ikke finde dig", "Tjek, at placering er slået til, og prøv igen.");
-    }
-  }
-
-  // Trin 5: åbn telefonens kort-app med ruten til butikken.
-  // iPhone bruger Apple Kort (maps.apple.com), Android bruger Google Maps.
-  // daddr/destination er målet. Startpunktet er brugerens placering, så det udelades.
-  async function aabnRute(butik) {
-    const maal = butik.latitude + "," + butik.longitude;
-    const url = Platform.select({
-      ios: "http://maps.apple.com/?daddr=" + maal,
-      default: "https://www.google.com/maps/dir/?api=1&destination=" + maal,
-    });
-    try {
-      await Linking.openURL(url);
-    } catch (error) {
-      Alert.alert("Kunne ikke åbne kortet", "Prøv igen om lidt.");
     }
   }
 

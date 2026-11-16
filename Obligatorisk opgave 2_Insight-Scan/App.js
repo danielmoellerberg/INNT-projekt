@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { onAuthStateChanged } from "firebase/auth";
 import { ref, onValue } from "firebase/database";
@@ -11,7 +12,7 @@ import { ref, onValue } from "firebase/database";
 import { auth, rtdb } from "./database/firebase";
 import AuthStack from "./components/AuthStack";
 import StackComponent from "./components/StackComponent";
-import TilbudScreen from "./screens/TilbudScreen";
+import TilbudStack from "./components/TilbudStack";
 import ScanStack from "./components/ScanStack";
 import MadplanScreen from "./screens/MadplanScreen";
 import ButikkerScreen from "./screens/ButikkerScreen";
@@ -58,7 +59,8 @@ function KundeTabs() {
       })}
     >
       <Tab.Screen name="Hjem" component={StackComponent} />
-      <Tab.Screen name="Tilbud" component={TilbudScreen} />
+      {/* Tilbud-fanen har en stack: Tilbud -> Indkøbsliste */}
+      <Tab.Screen name="Tilbud" component={TilbudStack} />
       {/* Scan er fremhævet med en grøn cirkel. Scan-fanen har sin egen stack (kamera ->
           godkend kvittering), og tab-baren skjules, mens man scanner og godkender. */}
       <Tab.Screen
@@ -140,16 +142,19 @@ export default function App() {
   }
 
   return (
+    // GestureHandlerRootView: skal ligge yderst, for at swipe (slet en vare på indkøbslisten) virker
     // SafeAreaProvider: giver skærmene besked om notch og home-indikator (mønster fra øvelse 07/08)
     // AppProvider: fælles data fra Firebase til alle skærme (se context/AppContext.js)
-    <SafeAreaProvider>
-      <AppProvider user={user} profil={profil}>
-        <NavigationContainer>
-          {visIndhold()}
-          {/* Mørk statuslinje-tekst på de lyse skærme. Scan skifter selv til lys tekst. */}
-          <StatusBar style="dark" />
-        </NavigationContainer>
-      </AppProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={GlobalStyle.rod}>
+      <SafeAreaProvider>
+        <AppProvider user={user} profil={profil}>
+          <NavigationContainer>
+            {visIndhold()}
+            {/* Mørk statuslinje-tekst på de lyse skærme. Scan skifter selv til lys tekst. */}
+            <StatusBar style="dark" />
+          </NavigationContainer>
+        </AppProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

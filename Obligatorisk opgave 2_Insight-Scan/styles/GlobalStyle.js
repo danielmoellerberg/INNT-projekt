@@ -149,6 +149,10 @@ export const GlobalStyle = StyleSheet.create({
   sektioner: {
     gap: Spacing.xl,
   },
+  // Yderste lag i App.js (GestureHandlerRootView) skal fylde hele skærmen
+  rod: {
+    flex: 1,
+  },
   // Afstand under toppen af en FlatList, når listen starter lige efter overskriften
   listeHeader: {
     marginBottom: Spacing.lg,
@@ -169,6 +173,17 @@ export const GlobalStyle = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "baseline",
     marginBottom: Spacing.md,
+  },
+  // Sektionstop med et link til højre: linket centreres lodret i stedet for på grundlinjen
+  sektionHeaderMedLink: {
+    alignItems: "center",
+  },
+  // "Se alle" på Hjem: trykfladen er mindst 44 x 44 pt (Apples minimum)
+  seAlleKnap: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
+    alignItems: "flex-end",
   },
   sektionTitel: {
     ...Typography.title3,
@@ -244,6 +259,21 @@ export const GlobalStyle = StyleSheet.create({
   primaryButtonTekst: {
     ...Typography.headline,
     color: Colors.onPrimary,
+  },
+  // SecondaryButton: samme form, men lysegrøn, så den ikke konkurrerer med den primære knap
+  secondaryButton: {
+    flexDirection: "row", // så et ikon kan stå før teksten
+    gap: Spacing.sm,
+    height: 52,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
+  },
+  secondaryButtonTekst: {
+    ...Typography.headline,
+    color: Colors.primary,
   },
 
   // TextField: synlig label over feltet, så man altid kan se, hvad feltet er til
@@ -683,6 +713,10 @@ export const GlobalStyle = StyleSheet.create({
     ...Typography.amount,
     color: Colors.text,
   },
+  // Ravfarve = penge til brugeren, som i resten af appen
+  kpiTalCashback: {
+    color: Colors.cashback,
+  },
   kpiLabel: {
     ...Typography.footnote,
     color: Colors.textSecondary,
@@ -729,6 +763,22 @@ export const GlobalStyle = StyleSheet.create({
     width: 40,
     textAlign: "right",
     color: Colors.textSecondary,
+  },
+
+  // ---------- AlleKvitteringerScreen ----------
+  // Overskriften for en måned: navn til venstre, total og cashback til højre
+  maanedRække: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    paddingTop: Spacing.md,
+  },
+  maanedTal: {
+    ...Typography.subheadline,
+    color: Colors.textSecondary,
+  },
+  maanedCashback: {
+    color: Colors.cashback,
   },
 
   // ---------- KvitteringScreen ----------
@@ -790,11 +840,11 @@ export const GlobalStyle = StyleSheet.create({
     gap: 2,
   },
   cashbackBannerTekst: {
-    ...Typography.subheadline,
+    ...Typography.headline,
     color: Colors.text,
   },
-  cashbackBannerBeloeb: {
-    ...Typography.amount,
+  cashbackBannerBonus: {
+    ...Typography.subheadline,
     color: Colors.cashback,
   },
   vareKort: {
@@ -843,6 +893,86 @@ export const GlobalStyle = StyleSheet.create({
   totalBeloeb: {
     ...Typography.amount,
     color: Colors.text,
+  },
+
+  // ---------- UdbetalingScreen ----------
+  // Udbetal-knappen inde i cashback-kortet på Hjem
+  udbetalKnap: {
+    paddingTop: Spacing.md,
+  },
+  // Bonen på Udbetaling er centreret og har luft over valg af metode
+  udbetalingBon: {
+    alignItems: "center",
+    marginTop: Spacing.sm,
+  },
+  metodeRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    minHeight: 64,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+  },
+  metodeIkon: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  metodeTilfoejIkon: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Colors.separator,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // Feltet, hvor en ny metode tilføjes
+  metodeForm: {
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  metodeTyper: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  metodeInput: {
+    ...Typography.body,
+    height: 48,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Colors.separator,
+    color: Colors.text,
+  },
+  opsummering: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  opsummeringBeloeb: {
+    ...Typography.amount,
+    color: Colors.cashback,
+  },
+  sikkerhedLinje: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  sikkerhedTekst: {
+    ...Typography.footnote,
+    flex: 1,
+    color: Colors.textSecondary,
+  },
+  // UdbetalingSendtScreen: alt centreret midt på skærmen
+  udbetalingSendt: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.screen,
   },
 
   // ---------- TilbudScreen ----------
@@ -1125,6 +1255,12 @@ export const GlobalStyle = StyleSheet.create({
     borderColor: Colors.danger,
   },
   // Låst pris på varer med cashback: samme bredde som feltet, men kan ikke rettes
+  // Bonens total med hængelås (cashback beregnes af den, så den kan ikke rettes)
+  totalLaast: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
   prisLaast: {
     width: 96,
     height: 44,
@@ -1141,23 +1277,13 @@ export const GlobalStyle = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // ---------- MadplanScreen ----------
-  aiKort: {
-    backgroundColor: Colors.primarySoft,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    gap: Spacing.md,
+  // ---------- IndkoebslisteScreen ----------
+  // Cashback-kortet øverst har lys ravfarvet baggrund (penge til brugeren)
+  kpiKortCashback: {
+    backgroundColor: Colors.cashbackSoft,
   },
-  aiTitelRække: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  aiTitel: {
-    ...Typography.headline,
-    color: Colors.text,
-  },
-  aiInputRække: {
+  // "Tilføj en vare": kapselformet felt med en grøn plus-knap til højre
+  soegefelt: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
@@ -1165,14 +1291,20 @@ export const GlobalStyle = StyleSheet.create({
     paddingLeft: Spacing.lg,
     paddingRight: 6,
     borderRadius: Radius.pill,
+    borderWidth: 1.5,
+    borderColor: Colors.separator,
     backgroundColor: Colors.surface,
   },
-  aiInput: {
+  // Grøn kant, mens brugeren søger (Figma 11b)
+  soegefeltAktiv: {
+    borderColor: Colors.primary,
+  },
+  soegefeltInput: {
     ...Typography.body,
     flex: 1,
     color: Colors.text,
   },
-  aiSendKnap: {
+  plusKnap: {
     width: 40,
     height: 40,
     borderRadius: Radius.pill,
@@ -1180,9 +1312,161 @@ export const GlobalStyle = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  aiFodnote: {
-    ...Typography.footnote,
-    color: Colors.textSecondary,
+  plusKnapLys: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // Søgeresultater
+  soegResultat: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    minHeight: 64,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+  },
+  soegNavnRække: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  billigstMaerke: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+  },
+  billigstMaerkeTekst: {
+    ...Typography.caption,
+    color: Colors.primary,
+  },
+  soegPris: {
+    ...Typography.headline,
+    color: Colors.text,
+  },
+  soegPrisBilligst: {
+    color: Colors.primary,
+  },
+  // En gruppe per butik: top med logo og Rute-knap, derunder et hvidt kort med varerne
+  gruppeMellemrum: {
+    height: Spacing.xl,
+  },
+  gruppeSektion: {
+    gap: Spacing.md,
+  },
+  gruppeHoved: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  ruteKnap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+  },
+  ruteKnapTekst: {
+    ...Typography.subheadline,
+    fontWeight: "600",
+    color: Colors.primary,
+  },
+  // overflow: "hidden" holder de runde hjørner, når en række swipes
+  gruppeKort: {
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface,
+    overflow: "hidden",
+  },
+  // Én vare. Hvid baggrund, så det røde slet-felt kun ses, når rækken swipes.
+  listeVare: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    minHeight: 64,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.surface,
+  },
+  listeVareSkillelinje: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.separator,
+  },
+  // Afkrydset: grå og gennemstreget
+  listeVareAfkrydset: {
+    color: Colors.textTertiary,
+    textDecorationLine: "line-through",
+  },
+  // Det røde felt bag en række, der swipes til venstre
+  sletSwipe: {
+    width: 88,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+    backgroundColor: Colors.danger,
+  },
+  sletSwipeTekst: {
+    ...Typography.caption,
+    color: Colors.onPrimary,
+  },
+  // Forslaget om en billigere butik
+  forslagKort: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    padding: Spacing.lg,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.primarySoft,
+  },
+  forslagTekst: {
+    ...Typography.subheadline,
+    flex: 1,
+    color: Colors.text,
+  },
+  forslagKnap: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  forslagKnapTekst: {
+    ...Typography.headline,
+    color: Colors.primary,
+  },
+
+  // ---------- MadplanScreen ----------
+  // "Kommer snart": indholdet centreres lodret, når der er plads
+  kommerSnart: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  kommerSnartTop: {
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  kommerSnartPunkter: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  kommerSnartPunkt: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  kommerSnartPunktTekst: {
+    ...Typography.body,
+    flex: 1,
+    color: Colors.text,
+  },
+  kommerSnartKnapper: {
+    gap: Spacing.md,
   },
 
   // ---------- ButikkerScreen ----------

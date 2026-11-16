@@ -1,83 +1,80 @@
-// MadplanScreen: kundens Madplan-fane (Figma: 07 Madplan).
-// Tanken er, at en AI-assistent foreslår en madplan ud fra brugerens tilbud og købsvaner.
-// AI'en er ikke koblet på endnu, så der findes ingen madplan-data. Skærmen viser derfor
-// AI-feltet og en tom tilstand i stedet for ugeplanen (ingen hardcodede retter).
+// MadplanScreen: Madplan-fanen som en tydelig "kommende funktion" (Figma: 07 Madplan).
+// Fanen beholdes, så Scan stadig står i midten af tab-baren. Skærmen fortæller, hvad Madplan
+// vil kunne, og har én knap, der virker i dag (indkøbslisten).
+//
+// FAKE DOOR-TEST (Lean Startup): knappen "Giv mig besked, når den er klar" er en "falsk dør".
+// Funktionen findes ikke endnu, men hvert tryk gemmes i users/{uid}/interesse/madplan. Så kan vi
+// måle, hvor mange der faktisk vil have en madplan, FØR vi bruger tid på at bygge den.
+// Det er en billig måde at teste værdihypotesen på med rigtig adfærd i stedet for at spørge.
 
-import React, { useState } from "react";
-import { View, Text, TextInput, ScrollView, Pressable, Alert } from "react-native";
+import React from "react";
+import { View, Text, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import PrimaryButton from "../components/PrimaryButton";
+import SecondaryButton from "../components/SecondaryButton";
 import { useApp } from "../context/AppContext";
 import { GlobalStyle, Colors } from "../styles/GlobalStyle";
 
-export default function MadplanScreen({ navigation }) {
-  const { kvitteringer } = useApp();
-  const [spoergsmaal, setSpoergsmaal] = useState("");
+// Hvad Madplan vil kunne (vises som tre korte punkter med ikon)
+const PUNKTER = [
+  { ikon: "pricetag-outline", tekst: "Madplan ud fra ugens tilbud" },
+  { ikon: "cart-outline", tekst: "Indkøbsliste med ét tryk" },
+  { ikon: "logo-tiktok", tekst: "Opskrifter fra TikTok og Instagram" },
+];
 
-  // Placeholder: her skal spørgsmålet sendes til AI'en med fetch (mønster fra 03),
-  // når AI-integrationen bygges. Indtil da fortæller vi brugeren, at funktionen kommer.
-  function sendTilAI() {
-    Alert.alert("Kommer snart", "AI-assistenten bliver koblet på i næste version af appen.");
-    setSpoergsmaal("");
+export default function MadplanScreen({ navigation }) {
+  const { interesse, visInteresse } = useApp();
+  // Har brugeren allerede bedt om besked? Læses fra Firebase, så det huskes efter genstart.
+  const harTilmeldt = Boolean(interesse.madplan);
+
+  // Gemmer interessen i Firebase. Knappen skifter selv til "Du får besked", fordi AppContext
+  // lytter på users/{uid}/interesse med onValue.
+  async function tilmeld() {
+    try {
+      await visInteresse("madplan");
+    } catch (error) {
+      Alert.alert("Det lykkedes ikke", "Tjek din internetforbindelse, og prøv igen.");
+    }
   }
 
   return (
     <SafeAreaView style={GlobalStyle.skaerm} edges={["top"]}>
-      <ScrollView contentContainerStyle={GlobalStyle.skaermIndhold} keyboardShouldPersistTaps="handled">
-        <View style={GlobalStyle.skaermHeader}>
-          <Text style={GlobalStyle.titelStor}>Madplan</Text>
-          <Text style={GlobalStyle.undertitel}>Retter ud fra dine tilbud og købsvaner</Text>
-        </View>
-
-        <View style={GlobalStyle.aiKort}>
-          <View style={GlobalStyle.aiTitelRække}>
-            <Ionicons name="sparkles-outline" size={20} color={Colors.primary} />
-            <Text style={GlobalStyle.aiTitel}>Spørg AI-assistenten</Text>
-          </View>
-          <View style={GlobalStyle.aiInputRække}>
-            <TextInput
-              style={GlobalStyle.aiInput}
-              value={spoergsmaal}
-              onChangeText={setSpoergsmaal}
-              placeholder="Fx: madplan under 400 kr."
-              placeholderTextColor={Colors.textTertiary}
-              accessibilityLabel="Spørgsmål til AI-assistenten"
-            />
-            {/* Send-knappen er slået fra, indtil der er skrevet noget */}
-            <Pressable
-              onPress={sendTilAI}
-              disabled={!spoergsmaal.trim()}
-              accessibilityRole="button"
-              accessibilityLabel="Send til AI-assistenten"
-              style={[GlobalStyle.aiSendKnap, !spoergsmaal.trim() && GlobalStyle.deaktiveret]}
-            >
-              <Ionicons name="arrow-up" size={20} color={Colors.onPrimary} />
-            </Pressable>
-          </View>
-          <Text style={GlobalStyle.aiFodnote}>
-            Forslag laves af AI ud fra dine tilbud og købsvaner. Tjek altid priser og allergener.
-          </Text>
-        </View>
-
-        {/* Tom tilstand i stedet for ugeplanen */}
-        <View style={GlobalStyle.tomTilstand}>
+      <ScrollView contentContainerStyle={[GlobalStyle.skaermIndhold, GlobalStyle.kommerSnart]}>
+        <View style={GlobalStyle.kommerSnartTop}>
           <View style={GlobalStyle.tomIkon}>
-            <Ionicons name="calendar-outline" size={28} color={Colors.primary} />
+            <Ionicons name="restaurant-outline" size={28} color={Colors.primary} />
           </View>
-          <Text style={GlobalStyle.tomTitel}>Ingen madplan endnu</Text>
+          <Text style={GlobalStyle.tomTitel}>Madplan kommer snart</Text>
           <Text style={GlobalStyle.tomTekst}>
-            {kvitteringer.length === 0
-              ? "Scan dine kvitteringer, så kan AI-assistenten foreslå retter ud fra det, du køber."
-              : "Spørg AI-assistenten ovenfor, så laver den en madplan til dig."}
+            Snart kan AI lave en madplan ud fra ugens tilbud og det, du plejer at købe.
           </Text>
-          {/* Handlingen giver kun mening, hvis der endnu ikke er scannet noget */}
-          {kvitteringer.length === 0 ? (
-            <View style={GlobalStyle.tomHandling}>
-              <PrimaryButton label="Scan kvittering" onPress={() => navigation.navigate("Scan")} />
+        </View>
+
+        <View style={GlobalStyle.kommerSnartPunkter}>
+          {PUNKTER.map((punkt) => (
+            <View key={punkt.tekst} style={GlobalStyle.kommerSnartPunkt}>
+              <Ionicons name={punkt.ikon} size={20} color={Colors.primary} />
+              <Text style={GlobalStyle.kommerSnartPunktTekst}>{punkt.tekst}</Text>
             </View>
-          ) : null}
+          ))}
+        </View>
+
+        <View style={GlobalStyle.kommerSnartKnapper}>
+          {/* Indkøbslisten virker i dag. Den ligger i Tilbud-fanens stack, og initial: false
+              lægger Tilbud nedenunder, så tilbage-knappen på indkøbslisten fører til Tilbud. */}
+          <PrimaryButton
+            label="Gå til indkøbsliste"
+            onPress={() => navigation.navigate("Tilbud", { screen: "Indkoebsliste", initial: false })}
+          />
+          {/* Fake door: efter tryk vises et flueben, og knappen kan ikke trykkes igen */}
+          <SecondaryButton
+            label={harTilmeldt ? "Du får besked" : "Giv mig besked, når den er klar"}
+            ikon={harTilmeldt ? "checkmark" : null}
+            onPress={tilmeld}
+            disabled={harTilmeldt}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>

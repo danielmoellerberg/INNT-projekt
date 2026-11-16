@@ -3,19 +3,21 @@
 // på kategorier og de seneste kvitteringer. Alle tal beregnes ud fra kvitteringerne i Firebase,
 // som hentes via AppContext. Uden kvitteringer vises en tom tilstand med en opfordring til at scanne.
 
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import PrimaryButton from "../components/PrimaryButton";
 import ReceiptRow from "../components/ReceiptRow";
+import BonKant from "../components/BonKant";
 import ScanReminderBanner from "../components/ScanReminderBanner";
-import { useApp } from "../context/AppContext";
+import { useApp, UDBETALING_MIN } from "../context/AppContext";
 import {
   KATEGORI_NAVNE,
   erDenneMaaned,
   formaterHeltal,
+  formaterToDecimaler,
   formaterKroner,
   formaterRelativDato,
   formaterUgedagOgDato,
@@ -23,22 +25,20 @@ import {
 } from "../data/const";
 import { GlobalStyle, Colors, bredde } from "../styles/GlobalStyle";
 
-// Cashback udbetales, når saldoen når dette beløb
-const UDBETALINGSGRAENSE = 250;
-// Hvor mange kvitteringer vises, før man trykker "Se alle"
+// Hvor mange kvitteringer Hjem viser. Resten ses på AlleKvitteringer via "Se alle"
 const ANTAL_SENESTE = 3;
-// Antal huller i bonens perforerede kant
-const PERFORERINGS_HULLER = Array.from({ length: 15 }, (_, i) => i);
 
 export default function HjemScreen({ navigation }) {
   const { profil, user, kvitteringer, saldo } = useApp();
-  const [visAlle, setVisAlle] = useState(false);
 
   const navn = profil && profil.navn ? profil.navn : "";
   // Forbogstav til profilknappen: navnet, ellers e-mailen
   const forbogstav = (navn || (user && user.email) || "?").charAt(0).toUpperCase();
 
   // --- Beregninger for denne måned (genbrugt idé fra OverblikScreen i opgave 1) ---
+  // Alle tre nøgletal (kvitteringer, kr. brugt og kr. cashback) bygger på den samme liste,
+  // maanedensKvitteringer, så de altid dækker den samme periode. Den samlede saldo (alle
+  // måneder) står kun i cashback-kortet øverst.
   const maanedensKvitteringer = kvitteringer.filter((k) => erDenneMaaned(k.dato));
   const forbrugIMaaneden = maanedensKvitteringer.reduce((sum, k) => sum + k.total, 0);
   const cashbackIMaaneden = maanedensKvitteringer.reduce((sum, k) => sum + (k.cashback || 0), 0);
@@ -59,13 +59,14 @@ export default function HjemScreen({ navigation }) {
     }))
     .sort((a, b) => b.procent - a.procent);
 
-  // Udbetaling: hvor langt er brugeren mod næste udbetaling? (% sørger for, at det starter
-  // forfra, når grænsen er nået)
-  const optjentMod = saldo % UDBETALINGSGRAENSE;
-  const tilNaesteUdbetaling = UDBETALINGSGRAENSE - optjentMod;
-  const udbetalingProcent = Math.round((optjentMod / UDBETALINGSGRAENSE) * 100);
+  // Udbetaling: saldo er den tilgængelige cashback (optjent minus udbetalt, se AppContext).
+  // Når den når UDBETALING_MIN, er bjælken fuld, og knappen "Udbetal" vises.
+  // Math.min sørger for, at bjælken aldrig bliver mere end 100 % fuld.
+  const kanUdbetale = saldo >= UDBETALING_MIN;
+  const tilNaesteUdbetaling = UDBETALING_MIN - saldo;
+  const udbetalingProcent = Math.min(100, Math.round((saldo / UDBETALING_MIN) * 100));
 
-  const visteKvitteringer = visAlle ? kvitteringer : kvitteringer.slice(0, ANTAL_SENESTE);
+  const visteKvitteringer = kvitteringer.slice(0, ANTAL_SENESTE);
 
   // Toppen af skærmen. Den sættes ind som ListHeaderComponent, så hele skærmen
   // scroller sammen med listen (mønster fra opgave 1).
@@ -99,14 +100,18 @@ export default function HjemScreen({ navigation }) {
             <View style={[GlobalStyle.udbetalingFremdrift, bredde(udbetalingProcent + "%")]} />
           </View>
           <Text style={GlobalStyle.udbetalingTekst}>
-            {formaterKroner(tilNaesteUdbetaling)} til næste udbetaling ved {UDBETALINGSGRAENSE} kr.
+            {kanUdbetale
+              ? "Du har nået " + UDBETALING_MIN + " kr. og kan få pengene udbetalt."
+              : formaterKroner(tilNaesteUdbetaling) + " til næste udbetaling ved " + UDBETALING_MIN + " kr."}
           </Text>
         </View>
-        <View style={GlobalStyle.perforering}>
-          {PERFORERINGS_HULLER.map((i) => (
-            <View key={i} style={GlobalStyle.perforeringHul} />
-          ))}
-        </View>
+        {/* Udbetal-knappen vises kun, når grænsen er nået. Den åbner Udbetaling i samme stack. */}
+        {kanUdbetale ? (
+          <View style={GlobalStyle.udbetalKnap}>
+            <PrimaryButton label={"Udbetal " + formaterKroner(saldo)} onPress={() => navigation.navigate("Udbetaling")} />
+          </View>
+        ) : null}
+        <BonKant />
       </View>
 
       {kvitteringer.length > 0 ? (
@@ -122,8 +127,11 @@ export default function HjemScreen({ navigation }) {
               <Text style={GlobalStyle.kpiLabel}>kr. brugt</Text>
             </View>
             <View style={GlobalStyle.kpiKort}>
-              <Text style={GlobalStyle.kpiTal}>{formaterHeltal(saldo)}</Text>
-              <Text style={GlobalStyle.kpiLabel}>kr. sparet</Text>
+              {/* To decimaler, fordi cashback er små beløb efter 0,5 %-modellen */}
+              <Text style={[GlobalStyle.kpiTal, GlobalStyle.kpiTalCashback]}>
+                {formaterToDecimaler(cashbackIMaaneden)}
+              </Text>
+              <Text style={GlobalStyle.kpiLabel}>kr. cashback</Text>
             </View>
           </View>
 
@@ -146,12 +154,18 @@ export default function HjemScreen({ navigation }) {
             </View>
           ) : null}
 
-          <View style={GlobalStyle.sektionHeader}>
+          <View style={[GlobalStyle.sektionHeader, GlobalStyle.sektionHeaderMedLink]}>
             <Text style={GlobalStyle.sektionTitel}>Seneste kvitteringer</Text>
-            {/* "Se alle" vises kun, når der er flere kvitteringer, end der er plads til */}
+            {/* "Se alle" vises kun, når der er flere kvitteringer, end Hjem viser.
+                Den åbner AlleKvitteringer i samme stack. Trykfladen er mindst 44 pt (seAlleKnap). */}
             {kvitteringer.length > ANTAL_SENESTE ? (
-              <Pressable onPress={() => setVisAlle(!visAlle)} accessibilityRole="button">
-                <Text style={GlobalStyle.linkTekst}>{visAlle ? "Vis færre" : "Se alle"}</Text>
+              <Pressable
+                onPress={() => navigation.navigate("AlleKvitteringer")}
+                accessibilityRole="link"
+                accessibilityLabel={"Se alle " + kvitteringer.length + " kvitteringer"}
+                style={({ pressed }) => [GlobalStyle.seAlleKnap, pressed && GlobalStyle.trykket]}
+              >
+                <Text style={GlobalStyle.linkTekst}>Se alle ({kvitteringer.length})</Text>
               </Pressable>
             ) : null}
           </View>

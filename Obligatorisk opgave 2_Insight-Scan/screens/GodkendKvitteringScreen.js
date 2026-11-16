@@ -4,15 +4,18 @@
 // Skærmen viser tydeligt, at varerne er aflæst af AI, fordi AI'en kan tage fejl.
 //
 // Regler mod snyd på denne skærm:
-// - Antal og varenavn kan ikke rettes, og cashback beregnes kun ud fra AI'ens aflæsning.
-// - Varer med cashback er låst, så deres pris ikke kan rettes.
-// - Retter brugeren en pris, gemmes AI'ens oprindelige pris ved siden af (aiPris).
+// - Cashback-basis beregnes af bonens total, som AI'en læste den. Totalen er låst, så man ikke
+//   kan få mere cashback ved at skrive et højere beløb.
+// - Antal og varenavn kan ikke rettes. Varer med ekstra cashback fra et sponsoreret tilbud
+//   er låst, så deres pris ikke kan rettes.
+// - Retter brugeren en anden pris, gemmes AI'ens oprindelige pris ved siden af (aiPris).
 
 import React, { useState } from "react";
 import { View, Text, TextInput, ScrollView, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import PrimaryButton from "../components/PrimaryButton";
+import CashbackBanner from "../components/CashbackBanner";
 import StoreLogo from "../components/StoreLogo";
 import { gemKvitteringBillede } from "../components/KvitteringBilleder";
 import { useApp } from "../context/AppContext";
@@ -27,7 +30,7 @@ function tekstTilPris(tekst) {
 export default function GodkendKvitteringScreen({ route, navigation }) {
   // Resultatet fra AI'en og billedet af bonen sendes med fra ScanScreen (mønster fra 05 og 07)
   const { resultat, billedeUri } = route.params;
-  const { gemKvittering, cashbackForVare } = useApp();
+  const { gemKvittering, beregnCashback } = useApp();
 
   // Varerne i state, så de kan rettes. Prisen gemmes som tekst ("23,95"), mens brugeren skriver.
   // Hver vare får et fast id, så React kan holde styr på rækkerne, når en vare slettes.
@@ -39,6 +42,10 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
     }))
   );
   const [gemmer, setGemmer] = useState(false);
+
+  // Cashback beregnes live, så brugeren kan se den, før bonen gemmes. Basis kommer af AI'ens
+  // total (resultat.total), og bonus af de varer, der er tilbage efter eventuelle sletninger.
+  const cashback = beregnCashback(resultat.total, varer);
 
   // Summen af de varer, der er tilbage, med de priser brugeren har rettet
   const summen = varer.reduce((sum, vare) => {
@@ -78,8 +85,8 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
       const kvittering = await gemKvittering({
         butik: resultat.butik,
         dato: resultat.dato,
-        // Bonens egen total bruges til at genkende bonen, hvis den scannes igen
-        bonTotal: resultat.total,
+        // AI'ens aflæste total: giver cashback-basis og genkender bonen, hvis den scannes igen
+        aiTotal: resultat.total,
         varer: varer.map((vare) => {
           const pris = Math.round(tekstTilPris(vare.prisTekst) * 100) / 100;
           const gemt = { navn: vare.navn, antal: vare.antal, pris: pris, kategori: vare.kategori };
@@ -121,8 +128,8 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
       <View style={GlobalStyle.aiMaerke}>
         <Ionicons name="sparkles-outline" size={20} color={Colors.primary} />
         <Text style={GlobalStyle.aiMaerkeTekst}>
-          Varerne er aflæst af AI. Tjek at priserne passer med bonen, før du gemmer. Varer med
-          cashback er låst, og en kvittering kan kun gemmes én gang.
+          Varerne er aflæst af AI. Tjek at priserne passer med bonen, før du gemmer. Bonens total
+          og varer med ekstra cashback er låst, og en kvittering kan kun gemmes én gang.
         </Text>
       </View>
 
@@ -134,12 +141,14 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
         </View>
       </View>
 
+      <CashbackBanner basis={cashback.basis} bonus={cashback.bonus} />
+
       <View style={GlobalStyle.vareKort}>
         <Text style={GlobalStyle.vareKortTitel}>{varer.length} varer</Text>
 
         {varer.map((vare, index) => {
-          // Viser cashback allerede nu, hvis varen har et tilbud
-          const cashback = cashbackForVare(vare);
+          // Ekstra cashback på denne vare fra et sponsoreret tilbud (0, hvis der ikke er et)
+          const bonus = cashback.varer[index].bonus;
           return (
             <View key={vare.id} style={GlobalStyle.godkendVareRække}>
               <View style={GlobalStyle.vareNavnKolonne}>
@@ -149,13 +158,13 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
                     {vare.antal > 1 ? vare.antal + " stk. · " : ""}
                     {KATEGORI_NAVNE[vare.kategori]}
                   </Text>
-                  {cashback > 0 ? (
-                    <Text style={GlobalStyle.vareCashback}>+ {formaterKroner(cashback)} cashback</Text>
+                  {bonus > 0 ? (
+                    <Text style={GlobalStyle.vareCashback}>+ {formaterKroner(bonus)} ekstra</Text>
                   ) : null}
                 </View>
               </View>
-              {/* Varer med cashback er låst. Andre priser kan rettes direkte i feltet. */}
-              {cashback > 0 ? (
+              {/* Varer med ekstra cashback er låst. Andre priser kan rettes direkte i feltet. */}
+              {bonus > 0 ? (
                 <View style={GlobalStyle.prisLaast} accessibilityLabel={"Pris for " + vare.navn + ", låst"}>
                   <Ionicons name="lock-closed-outline" size={14} color={Colors.textTertiary} />
                   <Text style={GlobalStyle.varePris}>{formaterKroner(vare.pris)}</Text>
@@ -182,17 +191,21 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
         })}
 
         <View style={GlobalStyle.skillelinje} />
+        {/* Bonens total, som AI'en læste den. Den er låst, fordi cashback beregnes af den. */}
         <View style={GlobalStyle.vareRække}>
-          <Text style={GlobalStyle.totalTekst}>I alt</Text>
-          <Text style={GlobalStyle.totalBeloeb}>{formaterKroner(summen)}</Text>
+          <Text style={GlobalStyle.totalTekst}>Bonens total</Text>
+          <View style={GlobalStyle.totalLaast} accessibilityLabel={"Bonens total, " + formaterKroner(resultat.total) + ", låst"}>
+            <Ionicons name="lock-closed-outline" size={16} color={Colors.textTertiary} />
+            <Text style={GlobalStyle.totalBeloeb}>{formaterKroner(resultat.total)}</Text>
+          </View>
         </View>
       </View>
 
-      {/* Bonens total kan afvige fra varerne, fx på grund af pant eller rabat */}
+      {/* Varernes sum kan afvige fra bonens total, fx på grund af pant, rabat eller en rettet pris */}
       {Math.abs(resultat.total - summen) >= 0.01 ? (
         <Text style={GlobalStyle.fodnote}>
-          Bonens total er {formaterKroner(resultat.total)}. Forskellen skyldes typisk pant eller rabat,
-          som ikke er varer.
+          Varerne giver tilsammen {formaterKroner(summen)}. Forskellen skyldes typisk pant eller rabat,
+          som ikke er varer. Cashback beregnes af bonens total.
         </Text>
       ) : null}
 

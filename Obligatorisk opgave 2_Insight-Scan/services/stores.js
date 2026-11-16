@@ -10,6 +10,7 @@
 // AsyncStorage med et tidsstempel (mønster fra øvelse 08), og vi henter kun igen, når de gemte
 // butikker er over et døgn gamle, eller brugeren har flyttet sig mere end 1 km.
 
+import { Linking, Platform, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const CACHE_NOEGLE = "BUTIKKER_I_NAERHEDEN";
@@ -157,5 +158,48 @@ export async function hentButikker(position) {
   } catch (error) {
     if (gemt) return gemt.butikker;
     throw error;
+  }
+}
+
+// Giver de butikker, der sidst blev hentet, og positionen, de blev hentet ved, eller null.
+// Spørger ikke om placering og henter ikke noget. Bruges af Indkøbslisten til afstande,
+// så den ikke selv skal spørge om placering (butikkerne hentes på Butikker-skærmen).
+export async function hentGemteButikker() {
+  try {
+    const json = await AsyncStorage.getItem(CACHE_NOEGLE);
+    return json ? JSON.parse(json) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Finder den nærmeste butik i en kæde ud fra de gemte butikker: { butik, afstand } eller null
+export function naermesteIKaede(gemt, kaede) {
+  if (!gemt || !kaede) return null;
+  let naermeste = null;
+  gemt.butikker
+    .filter((b) => b.kaede === kaede)
+    .forEach((b) => {
+      const afstand = afstandIMeter(gemt.position, b);
+      if (!naermeste || afstand < naermeste.afstand) {
+        naermeste = { butik: b, afstand: afstand };
+      }
+    });
+  return naermeste;
+}
+
+// Åbner telefonens kort-app med ruten til butikken.
+// iPhone bruger Apple Kort (maps.apple.com), Android bruger Google Maps.
+// daddr/destination er målet. Startpunktet er brugerens placering, så det udelades.
+export async function aabnRute(butik) {
+  const maal = butik.latitude + "," + butik.longitude;
+  const url = Platform.select({
+    ios: "http://maps.apple.com/?daddr=" + maal,
+    default: "https://www.google.com/maps/dir/?api=1&destination=" + maal,
+  });
+  try {
+    await Linking.openURL(url);
+  } catch (error) {
+    Alert.alert("Kunne ikke åbne kortet", "Prøv igen om lidt.");
   }
 }

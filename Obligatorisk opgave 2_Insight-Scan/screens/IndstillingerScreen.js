@@ -8,7 +8,7 @@ import { View, Text, ScrollView, Pressable, Switch, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { signOut } from "firebase/auth";
 
-import { useApp } from "../context/AppContext";
+import { useApp, UDBETALING_MIN } from "../context/AppContext";
 import { auth } from "../database/firebase";
 import { GlobalStyle, Colors } from "../styles/GlobalStyle";
 
@@ -103,7 +103,7 @@ export default function IndstillingerScreen({ navigation }) {
         <Text style={GlobalStyle.gruppeTitel}>KONTO</Text>
         <View style={GlobalStyle.gruppeListe}>
           <IndstillingRaekke ikon="card-outline" tekst="Udbetaling">
-            <Text style={GlobalStyle.indstillingVaerdi}>Ved 250 kr.</Text>
+            <Text style={GlobalStyle.indstillingVaerdi}>Ved {UDBETALING_MIN} kr.</Text>
           </IndstillingRaekke>
           <View style={GlobalStyle.skillelinje} />
           {/* Går til Butikker-fanen, hvor butikkerne vælges */}

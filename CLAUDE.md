@@ -8,8 +8,31 @@ og obligatorisk opgave 2. Arbejdet nu er **opgave 2**. Øvelserne og opgave 1 er
 Insight-Scan er en kvitteringsapp, der udvikles til en **tosidet platform**:
 
 - **Kunde:** scanner madkvitteringer, får overblik over forbrug på tværs af kæder (Netto,
-  Rema 1000, Føtex, Lidl), indsigt i hvad der købes, og cashback på udvalgte varer.
-- **Leverandør:** (fx et brand) opretter cashback-tilbud, som kunderne kan se og optjene.
+  Rema 1000, Føtex, Lidl), indsigt i hvad der købes, og cashback på hver bon.
+- **Leverandør:** (fx et brand) opretter sponsorerede tilbud, som giver ekstra cashback oveni.
+
+### Cashback-modellen (pivot efter Think Out Loud-test)
+- **Basis:** brugeren får `CASHBACK_SATS` (0,5 %) af bonens total, afrundet til hele øre.
+  Totalen er AI'ens aflæsning (`aiTotal`), ikke den sum, brugeren kan rette.
+- **Bonus:** matcher en vare et sponsoreret tilbud i `offers/`, lægges tilbuddets cashback
+  (per stk.) oveni.
+- Kvitteringen gemmer `aiTotal`, `cashbackBasis`, `cashbackBonus` og `cashback` (summen). Varer
+  med bonus har feltet `bonus`.
+- Udbetaling ved `UDBETALING_MIN` (250 kr.). Konstanterne ligger øverst i `AppContext.js`.
+  Reglen for `udbetalinger/` har samme grænse (250) skrevet ind og skal rettes med, hvis den ændres.
+
+### Udbetaling (simuleret)
+- Der sendes ingen rigtige penge. "Bekræft udbetaling" gemmer en anmodning i
+  `users/{uid}/udbetalinger` med `beloeb`, `metode`, `tidspunkt` og `status: "anmodet"`.
+- Tilgængelig cashback (`saldo`) = cashback fra kvitteringer minus summen af udbetalinger.
+- En udbetaling kan kun oprettes af brugeren selv og aldrig ændres eller slettes (reglerne).
+- Udbetalingsmetoden gemmes i AsyncStorage som maskeret tekst ("Konto ••••5678"), aldrig det
+  fulde nummer.
+- Rigtig udbetaling kræver Stripe Connect via en server (Cloud Functions). Uden for kurset.
+- **Hvorfor:** i Think Out Loud-testen forstod brugerne ikke, at kun enkelte varer gav cashback,
+  og de fleste boner gav 0 kr. Nu giver hver bon noget, og mærkerne betaler for ekstra synlighed.
+- **Gamle kvitteringer** (gemt før pivoten) beholder deres cashback. De har `cashback` per vare
+  og ingen `cashbackBasis`, og skærmene viser dem, som de var.
 
 Opgave 2 bygges videre i samme mappe som opgave 1, omdøbt til `Obligatorisk opgave 2_Insight-Scan`.
 Den afleverede version af opgave 1 er bevaret i git-tagget `opgave-1`. Den største ændring er,
@@ -196,8 +219,11 @@ Koden skal kunne forklares til eksamen, så kommentarerne er **mere forklarende*
   En kvittering kan ikke gemmes uden et aftryk (`.validate`).
 - **Ingen redigering bagefter:** en gemt kvittering kan kun oprettes eller slettes, ikke ændres.
   Sletter man den, bliver aftrykket liggende, så bonen ikke kan scannes igen.
-- **Pris og antal:** antal og varenavn kan ikke rettes. Cashback beregnes ud fra AI'ens aflæsning.
-  Varer med cashback er låst. Rettes en anden pris, gemmes AI'ens pris i `aiPris`.
+- **Pris, antal og total:** antal og varenavn kan ikke rettes. Bonens total er låst, fordi
+  cashback-basis beregnes af den. Varer med bonus fra et sponsoreret tilbud er låst. Rettes en
+  anden pris, gemmes AI'ens pris i `aiPris`.
+- **Cashback-loft i reglerne:** `cashbackBasis` må højst være `aiTotal * 0.005` (+ 0,01 for
+  afrunding), og `cashback` højst `cashbackBasis + cashbackBonus` (+ 0,01).
 - **Dato:** dato, klokkeslæt og total skal kunne læses, og bonen må højst være 14 dage gammel
   (`MAKS_ALDER_DAGE` i `AppContext.js`).
 - **Begrænsning:** al logik kører i appen på brugerens telefon. En målrettet snyder kan skrive

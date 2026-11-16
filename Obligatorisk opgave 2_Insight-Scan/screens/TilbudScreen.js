@@ -29,7 +29,7 @@ function butikOgGyldighed(etTilbud) {
 }
 
 export default function TilbudScreen({ navigation }) {
-  const { tilbud, kvitteringer, valgteButikker, tilfoejTilIndkoebsliste } = useApp();
+  const { tilbud, kvitteringer, valgteButikker, tilfoejTilbudTilListe } = useApp();
   const [filter, setFilter] = useState("alle");
 
   // Hvilken kategori køber brugeren oftest? Vi tæller varerne på alle kvitteringer.
@@ -55,11 +55,15 @@ export default function TilbudScreen({ navigation }) {
   const udvalgt = filtrerede.find((t) => t.kategori === favoritKategori) || filtrerede[0];
   const flere = filtrerede.filter((t) => t !== udvalgt);
 
-  // Tilføjer et tilbud til indkøbslisten i Firebase og giver en kort bekræftelse
+  // Tilføjer et tilbud til indkøbslisten i Firebase. Bekræftelsen har en knap, der åbner
+  // indkøbslisten i samme stack, så man kan blive på Tilbud og tilføje flere varer.
   async function tilfoej(etTilbud) {
     try {
-      await tilfoejTilIndkoebsliste(etTilbud);
-      Alert.alert("Tilføjet", etTilbud.vare + " er på din indkøbsliste.");
+      await tilfoejTilbudTilListe(etTilbud);
+      Alert.alert("Tilføjet", etTilbud.vare + " er på din indkøbsliste.", [
+        { text: "OK", style: "cancel" },
+        { text: "Se indkøbsliste", onPress: () => navigation.navigate("Indkoebsliste") },
+      ]);
     } catch (error) {
       Alert.alert("Kunne ikke tilføje", error.message);
     }
@@ -113,7 +117,7 @@ export default function TilbudScreen({ navigation }) {
               <Text style={GlobalStyle.udvalgtPris}>{formaterKroner(udvalgt.pris)}</Text>
               {udvalgt.foerPris ? <Text style={GlobalStyle.foerPris}>{formaterKroner(udvalgt.foerPris)}</Text> : null}
               <View style={GlobalStyle.cashbackBadgeStor}>
-                <Text style={GlobalStyle.cashbackBadgeStorTekst}>+ {formaterKroner(udvalgt.cashback)} cashback</Text>
+                <Text style={GlobalStyle.cashbackBadgeStorTekst}>+ {formaterKroner(udvalgt.cashback)} ekstra</Text>
               </View>
             </View>
             <PrimaryButton label="Tilføj til indkøbsliste" onPress={() => tilfoej(udvalgt)} />
@@ -162,7 +166,7 @@ export default function TilbudScreen({ navigation }) {
             vare={item.vare}
             butik={butikOgGyldighed(item)}
             pris={formaterKroner(item.pris)}
-            cashback={"+ " + formaterKroner(item.cashback)}
+            cashback={"+ " + formaterKroner(item.cashback) + " ekstra"}
             onTilfoej={() => tilfoej(item)}
           />
         )}

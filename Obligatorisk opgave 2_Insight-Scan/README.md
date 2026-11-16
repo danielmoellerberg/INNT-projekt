@@ -12,19 +12,24 @@ Daniel Møller Berg og Amalie Sharon Koefoed-Hansen
 ## Om appen
 
 Insight-Scan er en app hvor man scanner sine madkvitteringer. Appen viser hvor mange penge
-man har brugt i fx Netto, Rema 1000, Føtex og Lidl, giver cashback på udvalgte varer og viser
+man har brugt i fx Netto, Rema 1000, Føtex og Lidl, giver cashback på hver bon og viser
 en simpel indsigt i hvad man køber – fx hvor meget der går til snacks i forhold til protein.
 
 I opgave 2 er appen blevet en tosidet platform. Kunden scanner sine kvitteringer og optjener
-cashback på tilbud fra leverandører (fx et brand). Leverandørsiden, hvor tilbuddene skal
-oprettes, er endnu en mock-up.
+0,5 % af bonens total i cashback. Leverandører (fx et brand) kan sponsorere tilbud, som giver
+ekstra cashback oveni. Leverandørsiden, hvor tilbuddene skal oprettes, er endnu en mock-up.
+
+Cashback-modellen er ændret efter vores Think Out Loud-test. Før gav kun enkelte varer fra
+mærkernes tilbud cashback, så de fleste boner gav 0 kr., og testpersonerne forstod ikke hvorfor.
+Nu giver hver bon cashback. Når man har optjent 250 kr., kan cashback udbetales fra Hjem
+(udbetalingen er simuleret, se "Fremtidige udvidelser").
 
 Det nye i opgave 2:
 
 - **Ægte scanning** – man tager et billede af bonen eller vælger et fra sine fotos. En AI aflæser
   butik, dato og varer, og man tjekker resultatet, før kvitteringen gemmes.
 - **Regler mod snyd** – hver bon kan kun bruges én gang, den må højst være 14 dage gammel, og
-  varer med cashback kan ikke rettes.
+  bonens total og varer med ekstra cashback kan ikke rettes.
 - **Billedet af bonen** – på en gemt kvittering kan man trykke på et lille billede og se den
   rigtige bon igen.
 - **Butikker nær dig** – et kort over supermarkeder i nærheden. Man vælger de kæder, man handler
@@ -69,7 +74,7 @@ Ansvaret for udviklingen og kodningen af de enkelte skærme er fordelt som angiv
 - **Billede af bon** (Daniel) – den rigtige bon i fuld størrelse
 - **Scan** (Daniel) – kameraet, hvor man tager et billede af bonen eller vælger et fra sine fotos
 - **Tjek kvitteringen** (Daniel) – det AI'en har aflæst, som man tjekker, før kvitteringen gemmes
-- **Tilbud** (Amalie) – cashback-tilbud fra leverandørerne med filtre, fx "Mine butikker"
+- **Tilbud** (Amalie) – sponsorerede tilbud med ekstra cashback og filtre, fx "Mine butikker"
 - **Madplan** (fælles) – idé til en AI-madplan ud fra tilbud og købsvaner (ikke bygget endnu)
 - **Butikker** (Amalie) – kort over supermarkeder i nærheden og valg af de kæder, man handler i
 - **Indstillinger** (Amalie) – profil, påmindelser, mine butikker og log ud
@@ -78,6 +83,13 @@ Ansvaret for udviklingen og kodningen af de enkelte skærme er fordelt som angiv
 Kvitteringer, brugere og tilbud gemmes i Firebase. De valgte kæder og indstillinger gemmes på
 telefonen med AsyncStorage, og billedet af bonen gemmes i appens egen mappe på telefonen.
 Supermarkederne på kortet hentes fra OpenStreetMap.
+
+## Fremtidige udvidelser
+
+- **Rigtig udbetaling:** I dag er udbetalingen simuleret. Appen gemmer kun en anmodning i Firebase,
+  og der sendes ingen penge. En rigtig udbetaling kræver Stripe Connect via en server, fx Firebase
+  Cloud Functions. Serveren skal tjekke saldoen, kalde Stripe med en hemmelig nøgle, som aldrig
+  må ligge i appen, og markere udbetalingen som gennemført.
 
 ## AI-assistent
 

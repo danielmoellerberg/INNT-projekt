@@ -30,8 +30,13 @@ function medTusindtal(heltal) {
 
 // 312.5 -> "312,50 kr." (dansk komma og altid to decimaler)
 export function formaterKroner(beloeb) {
+  return formaterToDecimaler(beloeb) + " kr.";
+}
+
+// 4.3214 -> "4,32" (beløb med to decimaler uden "kr.", fx i nøgletal)
+export function formaterToDecimaler(beloeb) {
   const [heltal, decimaler] = beloeb.toFixed(2).split(".");
-  return medTusindtal(heltal) + "," + decimaler + " kr.";
+  return medTusindtal(heltal) + "," + decimaler;
 }
 
 // 2340.4 -> "2.340" (til nøgletal uden decimaler)

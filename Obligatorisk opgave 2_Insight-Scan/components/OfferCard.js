@@ -1,4 +1,5 @@
-// OfferCard: ét tilbud med pris og cashback (Figma: OfferCard).
+// OfferCard: ét sponsoreret tilbud med pris og ekstra cashback (Figma: OfferCard).
+// Efter pivoten giver tilbuddet cashback oveni de 0,5 % af bonen, derfor "+ X kr. ekstra".
 // Plus-knappen til højre tilføjer varen til indkøbslisten. Den er 44 x 44, som er
 // Apples mindste anbefalede trykflade, så den er nem at ramme.
 
