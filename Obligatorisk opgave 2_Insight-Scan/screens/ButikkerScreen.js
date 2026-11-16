@@ -1,4 +1,6 @@
-// ButikkerScreen: kundens Butikker-fane (Figma: 08 Butikker).
+// ButikkerScreen: supermarkeder nær dig (Figma: 08 Butikker). Ligger i Indkøbsliste-fanens stack
+// (IndkoebsStack) og åbnes fra "Supermarkeder nær dig" på indkøbslisten og "Mine butikker" i
+// Indstillinger. Var tidligere en fane.
 // Øverst et kort med supermarkederne i nærheden, nederst et ark med én række per kæde
 // ("Jeg handler her"). Kortet viser kun butikker fra de kæder, brugeren har slået til, og
 // de samme valg bruges af filteret "Mine butikker" på Tilbud (via valgteButikker i AppContext).

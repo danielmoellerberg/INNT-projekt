@@ -1,5 +1,5 @@
-// OfferCard: ét sponsoreret tilbud med pris og ekstra cashback (Figma: OfferCard).
-// Efter pivoten giver tilbuddet cashback oveni de 0,5 % af bonen, derfor "+ X kr. ekstra".
+// OfferCard: ét tilbud fra en tilbudsavis med pris, førpris og besparelse (Figma: OfferCard).
+// Tilbud giver ikke cashback - cashback er 0,5 % af hele bonen, når den scannes.
 // Plus-knappen til højre tilføjer varen til indkøbslisten. Den er 44 x 44, som er
 // Apples mindste anbefalede trykflade, så den er nem at ramme.
 
@@ -9,7 +9,8 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { GlobalStyle, Colors } from "../styles/GlobalStyle";
 
-export default function OfferCard({ vare, butik, pris, cashback, onTilfoej }) {
+// foerPris og spar er færdige tekster (fx "24,95 kr." og "Spar 4,95 kr.") eller null
+export default function OfferCard({ vare, butik, pris, foerPris, spar, onTilfoej }) {
   return (
     <View style={GlobalStyle.offerCard}>
       {/* Pladsholder for produktbillede, indtil tilbuddene har rigtige billeder */}
@@ -22,9 +23,12 @@ export default function OfferCard({ vare, butik, pris, cashback, onTilfoej }) {
         <Text style={GlobalStyle.rækkeInfo} numberOfLines={1}>{butik}</Text>
         <View style={GlobalStyle.offerCardPrisRække}>
           <Text style={GlobalStyle.rækkeTitel}>{pris}</Text>
-          <View style={GlobalStyle.cashbackBadge}>
-            <Text style={GlobalStyle.cashbackBadgeTekst}>{cashback}</Text>
-          </View>
+          {foerPris ? <Text style={GlobalStyle.foerPris}>{foerPris}</Text> : null}
+          {spar ? (
+            <View style={GlobalStyle.sparMaerke}>
+              <Text style={GlobalStyle.sparMaerkeTekst}>{spar}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
 

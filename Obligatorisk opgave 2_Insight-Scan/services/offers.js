@@ -1,8 +1,10 @@
 // offers.js: søgning og prissammenligning i tilbuddene (offers/ i Firebase).
+// Tilbud er almindelige tilbud fra butikkernes tilbudsaviser (vare, butik, pris, førpris,
+// kategori og gyldighed). De giver ikke cashback - cashback er 0,5 % af hele bonen.
 // Tilbuddene hentes live af AppContext (onValue), så funktionerne her får listen som argument
 // og regner bare på den. Al logik er almindelig sammenligning i koden - ikke et AI-kald.
 //
-// Senere kan der hentes priser fra flere kilder (fx Salling Group), uden at skærmene skal
+// På sigt hentes tilbuddene via API'er fra kæderne (fx Salling Group), uden at skærmene skal
 // ændres: de kalder kun soegVarer og findBilligereAndetsteds.
 
 // Gør et varenavn sammenligneligt: små bogstaver og kun bogstaver og tal.
@@ -20,9 +22,11 @@ export function sammeVare(navnA, navnB) {
   return a !== "" && b !== "" && (a.includes(b) || b.includes(a));
 }
 
-// Finder tilbuddet på en vare (bruges til ekstra cashback på kvitteringer)
-export function findTilbud(alleTilbud, varenavn) {
-  return alleTilbud.find((t) => sammeVare(t.vare, varenavn));
+// Hvor meget sparer man på et tilbud? Førpris minus tilbudspris, afrundet til hele øre.
+// Har tilbuddet ingen førpris (eller er den ikke højere), giver det 0.
+export function besparelse(etTilbud) {
+  if (!etTilbud.foerPris || etTilbud.foerPris <= etTilbud.pris) return 0;
+  return Math.round((etTilbud.foerPris - etTilbud.pris) * 100) / 100;
 }
 
 // Søger efter en vare i alle butikker. Resultatet er sorteret efter pris, billigst først,

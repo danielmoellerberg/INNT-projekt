@@ -3,12 +3,12 @@
 // trykker "Gem kvittering", gemmes kvitteringen i Firebase (users/{uid}/kvitteringer).
 // Skærmen viser tydeligt, at varerne er aflæst af AI, fordi AI'en kan tage fejl.
 //
-// Regler mod snyd på denne skærm:
-// - Cashback-basis beregnes af bonens total, som AI'en læste den. Totalen er låst, så man ikke
-//   kan få mere cashback ved at skrive et højere beløb.
-// - Antal og varenavn kan ikke rettes. Varer med ekstra cashback fra et sponsoreret tilbud
-//   er låst, så deres pris ikke kan rettes.
-// - Retter brugeren en anden pris, gemmes AI'ens oprindelige pris ved siden af (aiPris).
+// Cashback er 0,5 % af bonens total. Regler mod snyd:
+// - Én bon kan kun bruges én gang (bonens aftryk, se gemKvittering i AppContext).
+// - Bonen må højst være 14 dage gammel (tjekkes allerede på ScanScreen).
+// - Totalen kan ikke rettes. Den er låst, fordi cashback beregnes af den, som AI'en læste den.
+// Varernes priser kan rettes, fordi de kun bruges til overblikket over forbrug. Antal og
+// varenavn kan ikke rettes. Retter brugeren en pris, gemmes AI'ens pris ved siden af (aiPris).
 
 import React, { useState } from "react";
 import { View, Text, TextInput, ScrollView, Pressable, Alert } from "react-native";
@@ -43,9 +43,8 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
   );
   const [gemmer, setGemmer] = useState(false);
 
-  // Cashback beregnes live, så brugeren kan se den, før bonen gemmes. Basis kommer af AI'ens
-  // total (resultat.total), og bonus af de varer, der er tilbage efter eventuelle sletninger.
-  const cashback = beregnCashback(resultat.total, varer);
+  // Cashback vises, før bonen gemmes: 0,5 % af AI'ens total (resultat.total)
+  const cashback = beregnCashback(resultat.total);
 
   // Summen af de varer, der er tilbage, med de priser brugeren har rettet
   const summen = varer.reduce((sum, vare) => {
@@ -128,8 +127,8 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
       <View style={GlobalStyle.aiMaerke}>
         <Ionicons name="sparkles-outline" size={20} color={Colors.primary} />
         <Text style={GlobalStyle.aiMaerkeTekst}>
-          Varerne er aflæst af AI. Tjek at priserne passer med bonen, før du gemmer. Bonens total
-          og varer med ekstra cashback er låst, og en kvittering kan kun gemmes én gang.
+          Varerne er aflæst af AI. Tjek at priserne passer med bonen, før du gemmer. Totalen kan
+          ikke rettes, en bon kan kun bruges én gang, og den må højst være 14 dage gammel.
         </Text>
       </View>
 
@@ -141,54 +140,40 @@ export default function GodkendKvitteringScreen({ route, navigation }) {
         </View>
       </View>
 
-      <CashbackBanner basis={cashback.basis} bonus={cashback.bonus} />
+      <CashbackBanner basis={cashback} />
 
       <View style={GlobalStyle.vareKort}>
         <Text style={GlobalStyle.vareKortTitel}>{varer.length} varer</Text>
 
-        {varer.map((vare, index) => {
-          // Ekstra cashback på denne vare fra et sponsoreret tilbud (0, hvis der ikke er et)
-          const bonus = cashback.varer[index].bonus;
-          return (
-            <View key={vare.id} style={GlobalStyle.godkendVareRække}>
-              <View style={GlobalStyle.vareNavnKolonne}>
-                <Text style={GlobalStyle.vareNavn}>{vare.navn}</Text>
-                <View style={GlobalStyle.vareMeta}>
-                  <Text style={GlobalStyle.vareAntal}>
-                    {vare.antal > 1 ? vare.antal + " stk. · " : ""}
-                    {KATEGORI_NAVNE[vare.kategori]}
-                  </Text>
-                  {bonus > 0 ? (
-                    <Text style={GlobalStyle.vareCashback}>+ {formaterKroner(bonus)} ekstra</Text>
-                  ) : null}
-                </View>
+        {varer.map((vare, index) => (
+          <View key={vare.id} style={GlobalStyle.godkendVareRække}>
+            <View style={GlobalStyle.vareNavnKolonne}>
+              <Text style={GlobalStyle.vareNavn}>{vare.navn}</Text>
+              <View style={GlobalStyle.vareMeta}>
+                <Text style={GlobalStyle.vareAntal}>
+                  {vare.antal > 1 ? vare.antal + " stk. · " : ""}
+                  {KATEGORI_NAVNE[vare.kategori]}
+                </Text>
               </View>
-              {/* Varer med ekstra cashback er låst. Andre priser kan rettes direkte i feltet. */}
-              {bonus > 0 ? (
-                <View style={GlobalStyle.prisLaast} accessibilityLabel={"Pris for " + vare.navn + ", låst"}>
-                  <Ionicons name="lock-closed-outline" size={14} color={Colors.textTertiary} />
-                  <Text style={GlobalStyle.varePris}>{formaterKroner(vare.pris)}</Text>
-                </View>
-              ) : (
-                <TextInput
-                  style={[GlobalStyle.prisInput, isNaN(tekstTilPris(vare.prisTekst)) && GlobalStyle.prisInputFejl]}
-                  value={vare.prisTekst}
-                  onChangeText={(tekst) => retPris(index, tekst)}
-                  keyboardType="decimal-pad"
-                  accessibilityLabel={"Pris for " + vare.navn}
-                />
-              )}
-              <Pressable
-                onPress={() => sletVare(index)}
-                accessibilityRole="button"
-                accessibilityLabel={"Slet " + vare.navn}
-                style={({ pressed }) => [GlobalStyle.sletKnap, pressed && GlobalStyle.trykket]}
-              >
-                <Ionicons name="trash-outline" size={20} color={Colors.danger} />
-              </Pressable>
             </View>
-          );
-        })}
+            {/* Prisen kan rettes direkte i feltet */}
+            <TextInput
+              style={[GlobalStyle.prisInput, isNaN(tekstTilPris(vare.prisTekst)) && GlobalStyle.prisInputFejl]}
+              value={vare.prisTekst}
+              onChangeText={(tekst) => retPris(index, tekst)}
+              keyboardType="decimal-pad"
+              accessibilityLabel={"Pris for " + vare.navn}
+            />
+            <Pressable
+              onPress={() => sletVare(index)}
+              accessibilityRole="button"
+              accessibilityLabel={"Slet " + vare.navn}
+              style={({ pressed }) => [GlobalStyle.sletKnap, pressed && GlobalStyle.trykket]}
+            >
+              <Ionicons name="trash-outline" size={20} color={Colors.danger} />
+            </Pressable>
+          </View>
+        ))}
 
         <View style={GlobalStyle.skillelinje} />
         {/* Bonens total, som AI'en læste den. Den er låst, fordi cashback beregnes af den. */}

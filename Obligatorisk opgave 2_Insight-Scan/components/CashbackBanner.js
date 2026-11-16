@@ -1,8 +1,11 @@
 // CashbackBanner: det gule banner med kvitteringens cashback.
 // Bruges både på GodkendKvittering (før bonen gemmes) og på Kvittering (efter).
-// Efter pivoten viser banneret fordelingen: basis (procent af bonen) og eventuel bonus fra
-// sponsorerede tilbud. Kvitteringer gemt før pivoten har ingen basis, så for dem vises kun
-// det samlede beløb, som det blev beregnet dengang.
+// Cashback er 0,5 % af hele bonens total, så banneret viser fx "0,5 % af bonen = 1,56 kr.".
+//
+// Gamle kvitteringer: kvitteringer fra før pivoten har ingen cashbackBasis, og kvitteringer fra
+// mellemperioden kan have en bonus (cashbackBonus) fra sponsorerede tilbud, som ikke findes mere.
+// For dem vises kun den samlede cashback, som den blev beregnet dengang. Den ændres ikke, så
+// saldoen ikke flytter sig.
 
 import React from "react";
 import { View, Text } from "react-native";
@@ -12,24 +15,15 @@ import { formaterKroner } from "../data/const";
 import { GlobalStyle } from "../styles/GlobalStyle";
 
 export default function CashbackBanner({ basis, bonus, cashback }) {
-  // Gammel kvittering (før pivoten): kun det samlede beløb
-  if (basis === undefined) {
-    return (
-      <View style={GlobalStyle.cashbackBanner}>
-        <Text style={GlobalStyle.cashbackBannerTekst}>Du fik {formaterKroner(cashback)} i cashback</Text>
-      </View>
-    );
-  }
+  const gammelKvittering = basis === undefined || bonus > 0;
 
   return (
     <View style={GlobalStyle.cashbackBanner}>
       <Text style={GlobalStyle.cashbackBannerTekst}>
-        Du får {formaterKroner(basis)} i cashback ({CASHBACK_SATS_TEKST} af bonen)
+        {gammelKvittering
+          ? "Du fik " + formaterKroner(cashback) + " i cashback"
+          : CASHBACK_SATS_TEKST + " af bonen = " + formaterKroner(basis)}
       </Text>
-      {/* Bonuslinjen vises kun, hvis en vare matchede et sponsoreret tilbud */}
-      {bonus > 0 ? (
-        <Text style={GlobalStyle.cashbackBannerBonus}>+ {formaterKroner(bonus)} ekstra fra sponsoreret tilbud</Text>
-      ) : null}
     </View>
   );
 }

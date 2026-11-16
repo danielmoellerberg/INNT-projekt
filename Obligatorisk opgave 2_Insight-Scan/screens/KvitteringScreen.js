@@ -1,7 +1,7 @@
 // KvitteringScreen: detaljer om én kvittering i Hjem-stacken (Figma: 04 Kvittering).
 // Genbrugt fra opgave 1: kvitteringen sendes med som parameter.
-// Efter pivoten viser banneret cashback som procent af bonen plus eventuel bonus, og kun varer
-// med ekstra cashback fra et sponsoreret tilbud får et mærke.
+// Cashback er 0,5 % af bonens total og vises i banneret. Der er ingen cashback på enkelte varer.
+// Gamle kvitteringer (før pivoten) viser kun deres samlede cashback (se CashbackBanner).
 // Nyt i opgave 2: opsætningen følger Figma, og kvitteringen kommer fra Firebase.
 // Er billedet af bonen gemt på telefonen, vises et lille billede i højre side af toppen.
 // Trykker man på det, åbnes den rigtige kvittering i fuld størrelse (KvitteringBilledeScreen).
@@ -30,11 +30,6 @@ export default function KvitteringScreen({ route, navigation }) {
       .catch(() => setBillede(null));
   }, [kvittering.id]);
 
-  // Ekstra cashback på en vare. Nye kvitteringer gemmer den som "bonus". Kvitteringer fra før
-  // pivoten havde cashback per vare i feltet "cashback", så den vises stadig, som den var.
-  function ekstraPaaVare(vare) {
-    return vare.bonus ?? vare.cashback ?? 0;
-  }
 
   return (
     <ScrollView style={GlobalStyle.skaerm} contentContainerStyle={GlobalStyle.skaermIndhold}>
@@ -73,17 +68,8 @@ export default function KvitteringScreen({ route, navigation }) {
           <View key={index} style={GlobalStyle.vareRække}>
             <View style={GlobalStyle.vareNavnKolonne}>
               <Text style={GlobalStyle.vareNavn}>{vare.navn}</Text>
-              {/* Ekstra linje med antal og/eller cashback - kun hvis der er noget at vise */}
-              {vare.antal > 1 || ekstraPaaVare(vare) > 0 ? (
-                <View style={GlobalStyle.vareMeta}>
-                  {vare.antal > 1 ? <Text style={GlobalStyle.vareAntal}>{vare.antal} stk.</Text> : null}
-                  {ekstraPaaVare(vare) > 0 ? (
-                    <Text style={GlobalStyle.vareCashback}>
-                      + {formaterKroner(ekstraPaaVare(vare))} {vare.bonus !== undefined ? "ekstra" : "cashback"}
-                    </Text>
-                  ) : null}
-                </View>
-              ) : null}
+              {/* Antal vises kun, hvis der er købt mere end én */}
+              {vare.antal > 1 ? <Text style={GlobalStyle.vareAntal}>{vare.antal} stk.</Text> : null}
             </View>
             <Text style={GlobalStyle.varePris}>{formaterKroner(vare.pris)}</Text>
           </View>

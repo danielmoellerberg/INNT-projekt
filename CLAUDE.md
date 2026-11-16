@@ -9,17 +9,25 @@ Insight-Scan er en kvitteringsapp, der udvikles til en **tosidet platform**:
 
 - **Kunde:** scanner madkvitteringer, får overblik over forbrug på tværs af kæder (Netto,
   Rema 1000, Føtex, Lidl), indsigt i hvad der købes, og cashback på hver bon.
-- **Leverandør:** (fx et brand) opretter sponsorerede tilbud, som giver ekstra cashback oveni.
+- **Leverandør:** (fx et brand) har en leverandørside, som kun er en mock-up i prototypen.
+- **Tilbud** er almindelige tilbud fra butikkernes tilbudsaviser: `vare`, `butik`, `pris`,
+  `foerPris`, `kategori`, `gyldig` (og `ownerId`). De giver **ikke** cashback. I prototypen er de
+  testdata i Firebase (`data/testtilbud.json`, importeres manuelt under `offers/`, appen
+  importerer ikke filen). På sigt hentes de via API'er fra kæderne.
 
-### Cashback-modellen (pivot efter Think Out Loud-test)
-- **Basis:** brugeren får `CASHBACK_SATS` (0,5 %) af bonens total, afrundet til hele øre.
-  Totalen er AI'ens aflæsning (`aiTotal`), ikke den sum, brugeren kan rette.
-- **Bonus:** matcher en vare et sponsoreret tilbud i `offers/`, lægges tilbuddets cashback
-  (per stk.) oveni.
-- Kvitteringen gemmer `aiTotal`, `cashbackBasis`, `cashbackBonus` og `cashback` (summen). Varer
-  med bonus har feltet `bonus`.
+### Cashback-modellen (value capture pivot efter Think Out Loud-test)
+- Brugeren får `CASHBACK_SATS` (0,5 %) af bonens total, afrundet til hele øre. Der er **ingen**
+  cashback på enkelte varer og ingen bonus fra tilbud.
+- Totalen er AI'ens aflæsning (`aiTotal`), ikke den sum, brugeren kan rette. Den er låst.
+- Kvitteringen gemmer `aiTotal`, `cashbackBasis` (0,5 % af `aiTotal`) og `cashback` (samme beløb).
 - Udbetaling ved `UDBETALING_MIN` (250 kr.). Konstanterne ligger øverst i `AppContext.js`.
   Reglen for `udbetalinger/` har samme grænse (250) skrevet ind og skal rettes med, hvis den ændres.
+- **Hvorfor:** i Think Out Loud-testen forstod brugerne ikke, at kun enkelte varer gav cashback,
+  og de fleste boner gav 0 kr. Nu giver hver bon noget. Indtægten skal komme fra anonym,
+  samlet indsigt i forbrug, ikke fra sponsorerede tilbud.
+- **Gamle kvitteringer** beholder deres cashback, så saldoen ikke ændrer sig. Dem fra før pivoten
+  har ingen `cashbackBasis`, og dem fra mellemperioden kan have `cashbackBonus`. For begge viser
+  `CashbackBanner` kun den samlede cashback ("Du fik x kr. i cashback").
 
 ### Udbetaling (simuleret)
 - Der sendes ingen rigtige penge. "Bekræft udbetaling" gemmer en anmodning i
@@ -29,10 +37,6 @@ Insight-Scan er en kvitteringsapp, der udvikles til en **tosidet platform**:
 - Udbetalingsmetoden gemmes i AsyncStorage som maskeret tekst ("Konto ••••5678"), aldrig det
   fulde nummer.
 - Rigtig udbetaling kræver Stripe Connect via en server (Cloud Functions). Uden for kurset.
-- **Hvorfor:** i Think Out Loud-testen forstod brugerne ikke, at kun enkelte varer gav cashback,
-  og de fleste boner gav 0 kr. Nu giver hver bon noget, og mærkerne betaler for ekstra synlighed.
-- **Gamle kvitteringer** (gemt før pivoten) beholder deres cashback. De har `cashback` per vare
-  og ingen `cashbackBasis`, og skærmene viser dem, som de var.
 
 Opgave 2 bygges videre i samme mappe som opgave 1, omdøbt til `Obligatorisk opgave 2_Insight-Scan`.
 Den afleverede version af opgave 1 er bevaret i git-tagget `opgave-1`. Den største ændring er,
@@ -220,10 +224,10 @@ Koden skal kunne forklares til eksamen, så kommentarerne er **mere forklarende*
 - **Ingen redigering bagefter:** en gemt kvittering kan kun oprettes eller slettes, ikke ændres.
   Sletter man den, bliver aftrykket liggende, så bonen ikke kan scannes igen.
 - **Pris, antal og total:** antal og varenavn kan ikke rettes. Bonens total er låst, fordi
-  cashback-basis beregnes af den. Varer med bonus fra et sponsoreret tilbud er låst. Rettes en
-  anden pris, gemmes AI'ens pris i `aiPris`.
+  cashback beregnes af den. Varernes priser kan rettes (de bruges kun til forbrugsoverblikket).
+  Rettes en pris, gemmes AI'ens pris i `aiPris`.
 - **Cashback-loft i reglerne:** `cashbackBasis` må højst være `aiTotal * 0.005` (+ 0,01 for
-  afrunding), og `cashback` højst `cashbackBasis + cashbackBonus` (+ 0,01).
+  afrunding), og `cashback` højst `cashbackBasis` (+ 0,01).
 - **Dato:** dato, klokkeslæt og total skal kunne læses, og bonen må højst være 14 dage gammel
   (`MAKS_ALDER_DAGE` i `AppContext.js`).
 - **Begrænsning:** al logik kører i appen på brugerens telefon. En målrettet snyder kan skrive

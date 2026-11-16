@@ -16,8 +16,8 @@ man har brugt i fx Netto, Rema 1000, Føtex og Lidl, giver cashback på hver bon
 en simpel indsigt i hvad man køber – fx hvor meget der går til snacks i forhold til protein.
 
 I opgave 2 er appen blevet en tosidet platform. Kunden scanner sine kvitteringer og optjener
-0,5 % af bonens total i cashback. Leverandører (fx et brand) kan sponsorere tilbud, som giver
-ekstra cashback oveni. Leverandørsiden, hvor tilbuddene skal oprettes, er endnu en mock-up.
+0,5 % af bonens total i cashback. Tilbud er almindelige tilbud fra butikkernes tilbudsaviser
+(testdata i prototypen) og giver ikke cashback. Leverandørsiden er endnu en mock-up.
 
 Cashback-modellen er ændret efter vores Think Out Loud-test. Før gav kun enkelte varer fra
 mærkernes tilbud cashback, så de fleste boner gav 0 kr., og testpersonerne forstod ikke hvorfor.
@@ -29,7 +29,7 @@ Det nye i opgave 2:
 - **Ægte scanning** – man tager et billede af bonen eller vælger et fra sine fotos. En AI aflæser
   butik, dato og varer, og man tjekker resultatet, før kvitteringen gemmes.
 - **Regler mod snyd** – hver bon kan kun bruges én gang, den må højst være 14 dage gammel, og
-  bonens total og varer med ekstra cashback kan ikke rettes.
+  bonens total kan ikke rettes, fordi cashback beregnes af den.
 - **Billedet af bonen** – på en gemt kvittering kan man trykke på et lille billede og se den
   rigtige bon igen.
 - **Butikker nær dig** – et kort over supermarkeder i nærheden. Man vælger de kæder, man handler
@@ -74,9 +74,11 @@ Ansvaret for udviklingen og kodningen af de enkelte skærme er fordelt som angiv
 - **Billede af bon** (Daniel) – den rigtige bon i fuld størrelse
 - **Scan** (Daniel) – kameraet, hvor man tager et billede af bonen eller vælger et fra sine fotos
 - **Tjek kvitteringen** (Daniel) – det AI'en har aflæst, som man tjekker, før kvitteringen gemmes
-- **Tilbud** (Amalie) – sponsorerede tilbud med ekstra cashback og filtre, fx "Mine butikker"
+- **Tilbud** (Amalie) – tilbud fra butikkernes aviser med førpris og besparelse, og filtre, fx "Mine butikker"
 - **Madplan** (fælles) – idé til en AI-madplan ud fra tilbud og købsvaner (ikke bygget endnu)
-- **Butikker** (Amalie) – kort over supermarkeder i nærheden og valg af de kæder, man handler i
+- **Indkøbsliste** (fane) – varer grupperet efter butik, søgning efter den billigste butik og afkrydsning
+- **Butikker** (Amalie) – åbnes fra indkøbslisten ("Supermarkeder nær dig"): kort over supermarkeder
+  i nærheden og valg af de kæder, man handler i
 - **Indstillinger** (Amalie) – profil, påmindelser, mine butikker og log ud
 - **Leverandør** (fælles) – mock-up af leverandørsiden (billede)
 

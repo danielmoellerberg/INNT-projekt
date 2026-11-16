@@ -1,5 +1,7 @@
 // TilbudScreen: kundens Tilbud-fane (Figma: 05 Tilbud). Erstatter CashbackScreen fra opgave 1.
-// Tilbuddene oprettes af leverandørerne og læses fra Firebase (offers/) via AppContext.
+// Tilbuddene er almindelige tilbud fra butikkernes tilbudsaviser (vare, butik, pris, førpris,
+// kategori og gyldighed). De ligger i Firebase (offers/) som testdata og læses via AppContext.
+// På sigt hentes de via API'er fra kæderne. Tilbud giver ikke cashback.
 // Øverst vises ét udvalgt tilbud i den kategori, brugeren køber mest i. Filtrene ("chips")
 // viser kun tilbud i én kategori eller fra de butikker, brugeren har valgt under Butikker.
 
@@ -11,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import OfferCard from "../components/OfferCard";
 import PrimaryButton from "../components/PrimaryButton";
 import { useApp } from "../context/AppContext";
+import { besparelse } from "../services/offers";
 import { KATEGORI_NAVNE, formaterKroner } from "../data/const";
 import { GlobalStyle, Colors } from "../styles/GlobalStyle";
 
@@ -20,6 +23,8 @@ const FILTRE = [
   { noegle: "kød/protein", navn: "Kød" },
   { noegle: "frugt/grønt", navn: "Grønt" },
   { noegle: "mejeri", navn: "Mejeri" },
+  { noegle: "drikkevarer", navn: "Drikkevarer" },
+  { noegle: "snacks", navn: "Snacks" },
   { noegle: "mineButikker", navn: "Mine butikker" },
 ];
 
@@ -55,14 +60,14 @@ export default function TilbudScreen({ navigation }) {
   const udvalgt = filtrerede.find((t) => t.kategori === favoritKategori) || filtrerede[0];
   const flere = filtrerede.filter((t) => t !== udvalgt);
 
-  // Tilføjer et tilbud til indkøbslisten i Firebase. Bekræftelsen har en knap, der åbner
-  // indkøbslisten i samme stack, så man kan blive på Tilbud og tilføje flere varer.
+  // Tilføjer et tilbud til indkøbslisten i Firebase. Bekræftelsen har en knap, der skifter til
+  // Indkøbsliste-fanen, så man også kan blive på Tilbud og tilføje flere varer.
   async function tilfoej(etTilbud) {
     try {
       await tilfoejTilbudTilListe(etTilbud);
       Alert.alert("Tilføjet", etTilbud.vare + " er på din indkøbsliste.", [
         { text: "OK", style: "cancel" },
-        { text: "Se indkøbsliste", onPress: () => navigation.navigate("Indkoebsliste") },
+        { text: "Se indkøbsliste", onPress: () => navigation.navigate("Indkøbsliste", { screen: "Indkoebsliste" }) },
       ]);
     } catch (error) {
       Alert.alert("Kunne ikke tilføje", error.message);
@@ -116,9 +121,11 @@ export default function TilbudScreen({ navigation }) {
             <View style={GlobalStyle.udvalgtPrisRække}>
               <Text style={GlobalStyle.udvalgtPris}>{formaterKroner(udvalgt.pris)}</Text>
               {udvalgt.foerPris ? <Text style={GlobalStyle.foerPris}>{formaterKroner(udvalgt.foerPris)}</Text> : null}
-              <View style={GlobalStyle.cashbackBadgeStor}>
-                <Text style={GlobalStyle.cashbackBadgeStorTekst}>+ {formaterKroner(udvalgt.cashback)} ekstra</Text>
-              </View>
+              {besparelse(udvalgt) > 0 ? (
+                <View style={GlobalStyle.sparMaerkeStor}>
+                  <Text style={GlobalStyle.sparMaerkeStorTekst}>Spar {formaterKroner(besparelse(udvalgt))}</Text>
+                </View>
+              ) : null}
             </View>
             <PrimaryButton label="Tilføj til indkøbsliste" onPress={() => tilfoej(udvalgt)} />
           </View>
@@ -145,7 +152,12 @@ export default function TilbudScreen({ navigation }) {
           </Text>
           {filter === "mineButikker" ? (
             <View style={GlobalStyle.tomHandling}>
-              <PrimaryButton label="Vælg butikker" onPress={() => navigation.navigate("Butikker")} />
+              {/* Butikker ligger i Indkøbsliste-fanens stack. initial: false lægger listen
+                  nedenunder, så tilbage-knappen på Butikker fører til indkøbslisten. */}
+              <PrimaryButton
+                label="Vælg butikker"
+                onPress={() => navigation.navigate("Indkøbsliste", { screen: "Butikker", initial: false })}
+              />
             </View>
           ) : null}
         </View>
@@ -166,7 +178,8 @@ export default function TilbudScreen({ navigation }) {
             vare={item.vare}
             butik={butikOgGyldighed(item)}
             pris={formaterKroner(item.pris)}
-            cashback={"+ " + formaterKroner(item.cashback) + " ekstra"}
+            foerPris={item.foerPris ? formaterKroner(item.foerPris) : null}
+            spar={besparelse(item) > 0 ? "Spar " + formaterKroner(besparelse(item)) : null}
             onTilfoej={() => tilfoej(item)}
           />
         )}

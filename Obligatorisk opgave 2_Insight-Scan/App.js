@@ -12,10 +12,10 @@ import { ref, onValue } from "firebase/database";
 import { auth, rtdb } from "./database/firebase";
 import AuthStack from "./components/AuthStack";
 import StackComponent from "./components/StackComponent";
-import TilbudStack from "./components/TilbudStack";
+import TilbudScreen from "./screens/TilbudScreen";
 import ScanStack from "./components/ScanStack";
 import MadplanScreen from "./screens/MadplanScreen";
-import ButikkerScreen from "./screens/ButikkerScreen";
+import IndkoebsStack from "./components/IndkoebsStack";
 import LeverandoerScreen from "./screens/LeverandoerScreen";
 
 import { AppProvider } from "./context/AppContext";
@@ -28,7 +28,7 @@ const FANE_IKONER = {
   Hjem: "home-outline",
   Tilbud: "pricetag-outline",
   Madplan: "calendar-outline",
-  Butikker: "location-outline",
+  "Indkøbsliste": "cart-outline",
 };
 
 // Kundesiden: fem faner med Scan i midten, så den vigtigste handling er nemmest at nå.
@@ -59,8 +59,7 @@ function KundeTabs() {
       })}
     >
       <Tab.Screen name="Hjem" component={StackComponent} />
-      {/* Tilbud-fanen har en stack: Tilbud -> Indkøbsliste */}
-      <Tab.Screen name="Tilbud" component={TilbudStack} />
+      <Tab.Screen name="Tilbud" component={TilbudScreen} />
       {/* Scan er fremhævet med en grøn cirkel. Scan-fanen har sin egen stack (kamera ->
           godkend kvittering), og tab-baren skjules, mens man scanner og godkender. */}
       <Tab.Screen
@@ -78,7 +77,13 @@ function KundeTabs() {
         }}
       />
       <Tab.Screen name="Madplan" component={MadplanScreen} />
-      <Tab.Screen name="Butikker" component={ButikkerScreen} />
+      {/* Indkøbsliste-fanen har en stack: Indkøbsliste -> Butikker (kort over supermarkeder).
+          title er den korte tekst i tab-baren, så den passer ved siden af de andre faner. */}
+      <Tab.Screen
+        name="Indkøbsliste"
+        component={IndkoebsStack}
+        options={{ headerShown: false, title: "Indkøb" }}
+      />
     </Tab.Navigator>
   );
 }

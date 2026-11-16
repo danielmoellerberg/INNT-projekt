@@ -106,9 +106,10 @@ export default function IndstillingerScreen({ navigation }) {
             <Text style={GlobalStyle.indstillingVaerdi}>Ved {UDBETALING_MIN} kr.</Text>
           </IndstillingRaekke>
           <View style={GlobalStyle.skillelinje} />
-          {/* Går til Butikker-fanen, hvor butikkerne vælges */}
+          {/* Går til Butikker, hvor kæderne vælges. Butikker ligger i Indkøbsliste-fanens stack,
+              og initial: false lægger listen nedenunder, så tilbage-knappen virker. */}
           <Pressable
-            onPress={() => navigation.navigate("Butikker")}
+            onPress={() => navigation.navigate("Indkøbsliste", { screen: "Butikker", initial: false })}
             accessibilityRole="button"
             style={({ pressed }) => pressed && GlobalStyle.trykket}
           >

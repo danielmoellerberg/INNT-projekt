@@ -1,8 +1,9 @@
-// IndkoebslisteScreen: kundens indkøbsliste i Tilbud-fanens stack (Figma: 11 og 11b Indkøbsliste).
+// IndkoebslisteScreen: kundens indkøbsliste, første skærm i Indkøbsliste-fanen (IndkoebsStack).
+// Figma: 11 og 11b Indkøbsliste. Herfra åbnes Butikker med "Supermarkeder nær dig".
 // Listen ligger i Firebase (users/{uid}/indkoebsliste) og læses live via AppContext.
 //
 // Skærmen har to tilstande:
-// - Listen (11): forventet pris og cashback øverst, varerne grupperet efter butik med afstand og
+// - Listen (11): forventet pris og forventet cashback (0,5 % af prisen) øverst, varerne grupperet efter butik med afstand og
 //   rutevejledning, afkrydsning, swipe for at slette og et forslag, hvis en vare er billigere
 //   i en anden af brugerens butikker.
 // - Søgning (11b): når brugeren skriver i "Tilføj en vare", vises samme vare i alle butikker,
@@ -13,6 +14,7 @@
 
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, FlatList, Pressable, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -79,17 +81,8 @@ function VareRaekke({ vare, sidst, onSkift, onSlet }) {
         />
         <View style={GlobalStyle.vareNavnKolonne}>
           <Text style={[GlobalStyle.vareNavn, vare.afkrydset && GlobalStyle.listeVareAfkrydset]}>{vare.navn}</Text>
-          {/* Tilbuddets gyldighed og ekstra cashback vises kun, før varen er krydset af */}
-          {!vare.afkrydset && (vare.gyldig || vare.cashback > 0) ? (
-            <View style={GlobalStyle.vareMeta}>
-              {vare.gyldig ? <Text style={GlobalStyle.vareAntal}>Tilbud {vare.gyldig}</Text> : null}
-              {vare.cashback > 0 ? (
-                <View style={GlobalStyle.cashbackBadge}>
-                  <Text style={GlobalStyle.cashbackBadgeTekst}>+ {formaterKroner(vare.cashback)}</Text>
-                </View>
-              ) : null}
-            </View>
-          ) : null}
+          {/* Tilbuddets gyldighed vises kun, før varen er krydset af */}
+          {!vare.afkrydset && vare.gyldig ? <Text style={GlobalStyle.vareAntal}>Tilbud {vare.gyldig}</Text> : null}
         </View>
         {vare.pris > 0 ? (
           <Text style={[GlobalStyle.varePris, vare.afkrydset && GlobalStyle.listeVareAfkrydset]}>
@@ -112,6 +105,7 @@ export default function IndkoebslisteScreen({ navigation }) {
     sletFraListe,
     rydAfkrydsede,
     flytVare,
+    beregnCashback,
   } = useApp();
   const [soegetekst, setSoegetekst] = useState("");
   // De butikker, der sidst blev hentet på Butikker-skærmen (til afstand og rute), eller null
@@ -127,7 +121,8 @@ export default function IndkoebslisteScreen({ navigation }) {
 
   // Nøgletallene øverst. Forventet pris tæller kun varer, der ikke er krydset af endnu.
   const forventetPris = indkoebsliste.filter((v) => !v.afkrydset).reduce((sum, v) => sum + (v.pris || 0), 0);
-  const cashback = indkoebsliste.reduce((sum, v) => sum + (v.cashback || 0), 0);
+  // Forventet cashback er 0,5 % af den forventede pris - det samme, som bonen vil give
+  const cashback = beregnCashback(forventetPris);
   const antalButikker = new Set(indkoebsliste.map((v) => v.butik).filter((b) => b)).size;
   const antalAfkrydsede = indkoebsliste.filter((v) => v.afkrydset).length;
 
@@ -237,7 +232,8 @@ export default function IndkoebslisteScreen({ navigation }) {
       <Text style={GlobalStyle.tomTitel}>Din indkøbsliste er tom</Text>
       <Text style={GlobalStyle.tomTekst}>Tilføj varer fra tilbuddene, eller skriv en vare i feltet ovenfor.</Text>
       <View style={GlobalStyle.tomHandling}>
-        <PrimaryButton label="Se tilbud" onPress={() => navigation.navigate("TilbudOversigt")} />
+        {/* Tilbud er en anden fane, så navigate skifter fane */}
+        <PrimaryButton label="Se tilbud" onPress={() => navigation.navigate("Tilbud")} />
       </View>
     </View>
   );
@@ -265,9 +261,19 @@ export default function IndkoebslisteScreen({ navigation }) {
           </View>
           <View style={[GlobalStyle.kpiKort, GlobalStyle.kpiKortCashback]}>
             <Text style={[GlobalStyle.kpiTal, GlobalStyle.kpiTalCashback]}>+ {formaterKroner(cashback)}</Text>
-            <Text style={GlobalStyle.kpiLabel}>cashback</Text>
+            <Text style={GlobalStyle.kpiLabel}>forventet cashback</Text>
           </View>
         </View>
+      ) : null}
+
+      {/* Butikker ligger i samme stack. Knappen skjules under søgning, så resultaterne står
+          lige under søgefeltet. */}
+      {!soeger ? (
+        <SecondaryButton
+          label="Supermarkeder nær dig"
+          ikon="location-outline"
+          onPress={() => navigation.navigate("Butikker")}
+        />
       ) : null}
 
       {/* Søgefeltet får en grøn kant, mens man søger (Figma 11b) */}
@@ -322,63 +328,67 @@ export default function IndkoebslisteScreen({ navigation }) {
   );
 
   return (
-    // KeyboardAvoidingView skubber indholdet op, så tastaturet ikke dækker søgeresultaterne
-    <KeyboardAvoidingView style={GlobalStyle.skaerm} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <FlatList
-        data={soeger ? [] : grupper}
-        keyExtractor={(gruppe) => gruppe.butik || "andre"}
-        ListHeaderComponent={toppen}
-        ListHeaderComponentStyle={GlobalStyle.listeHeader}
-        ListFooterComponent={soeger ? null : bunden}
-        contentContainerStyle={GlobalStyle.listeIndhold}
-        ItemSeparatorComponent={() => <View style={GlobalStyle.gruppeMellemrum} />}
-        // Tryk på knapper virker, selvom tastaturet er oppe
-        keyboardShouldPersistTaps="handled"
-        renderItem={({ item: gruppe }) => {
-          const naermeste = naermesteIKaede(gemteButikker, gruppe.butik);
-          return (
-            <View style={GlobalStyle.gruppeSektion}>
-              {/* Gruppens top: kæde, nærmeste butik med afstand og en Rute-knap */}
-              <View style={GlobalStyle.gruppeHoved}>
-                {gruppe.butik ? <StoreLogo butik={gruppe.butik} /> : null}
-                <View style={GlobalStyle.rækkeTekst}>
-                  <Text style={GlobalStyle.rækkeTitel}>{gruppe.butik || "Andre varer"}</Text>
+    // Skærmen har ingen header (den er første skærm i fanen), så SafeAreaView holder den fri
+    // af statuslinjen. KeyboardAvoidingView skubber indholdet op, så tastaturet ikke dækker
+    // søgeresultaterne.
+    <SafeAreaView style={GlobalStyle.skaerm} edges={["top"]}>
+      <KeyboardAvoidingView style={GlobalStyle.rod} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <FlatList
+          data={soeger ? [] : grupper}
+          keyExtractor={(gruppe) => gruppe.butik || "andre"}
+          ListHeaderComponent={toppen}
+          ListHeaderComponentStyle={GlobalStyle.listeHeader}
+          ListFooterComponent={soeger ? null : bunden}
+          contentContainerStyle={GlobalStyle.listeIndhold}
+          ItemSeparatorComponent={() => <View style={GlobalStyle.gruppeMellemrum} />}
+          // Tryk på knapper virker, selvom tastaturet er oppe
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item: gruppe }) => {
+            const naermeste = naermesteIKaede(gemteButikker, gruppe.butik);
+            return (
+              <View style={GlobalStyle.gruppeSektion}>
+                {/* Gruppens top: kæde, nærmeste butik med afstand og en Rute-knap */}
+                <View style={GlobalStyle.gruppeHoved}>
+                  {gruppe.butik ? <StoreLogo butik={gruppe.butik} /> : null}
+                  <View style={GlobalStyle.rækkeTekst}>
+                    <Text style={GlobalStyle.rækkeTitel}>{gruppe.butik || "Andre varer"}</Text>
+                    {naermeste ? (
+                      <Text style={GlobalStyle.rækkeInfo} numberOfLines={1}>
+                        {naermeste.butik.adresse ? naermeste.butik.adresse + " · " : ""}
+                        {formaterAfstand(naermeste.afstand)}
+                      </Text>
+                    ) : null}
+                  </View>
                   {naermeste ? (
-                    <Text style={GlobalStyle.rækkeInfo} numberOfLines={1}>
-                      {naermeste.butik.adresse ? naermeste.butik.adresse + " · " : ""}
-                      {formaterAfstand(naermeste.afstand)}
-                    </Text>
+                    <Pressable
+                      onPress={() => aabnRute(naermeste.butik)}
+                      accessibilityRole="button"
+                      accessibilityLabel={"Rute til " + gruppe.butik}
+                      hitSlop={8}
+                      style={({ pressed }) => [GlobalStyle.ruteKnap, pressed && GlobalStyle.trykket]}
+                    >
+                      <Ionicons name="navigate" size={14} color={Colors.primary} />
+                      <Text style={GlobalStyle.ruteKnapTekst}>Rute</Text>
+                    </Pressable>
                   ) : null}
                 </View>
-                {naermeste ? (
-                  <Pressable
-                    onPress={() => aabnRute(naermeste.butik)}
-                    accessibilityRole="button"
-                    accessibilityLabel={"Rute til " + gruppe.butik}
-                    hitSlop={8}
-                    style={({ pressed }) => [GlobalStyle.ruteKnap, pressed && GlobalStyle.trykket]}
-                  >
-                    <Ionicons name="navigate" size={14} color={Colors.primary} />
-                    <Text style={GlobalStyle.ruteKnapTekst}>Rute</Text>
-                  </Pressable>
-                ) : null}
-              </View>
 
-              <View style={GlobalStyle.gruppeKort}>
-                {gruppe.varer.map((vare, index) => (
-                  <VareRaekke
-                    key={vare.id}
-                    vare={vare}
-                    sidst={index === gruppe.varer.length - 1}
-                    onSkift={() => proev(() => skiftAfkrydset(vare.id, !vare.afkrydset))}
-                    onSlet={() => proev(() => sletFraListe(vare.id))}
-                  />
-                ))}
+                <View style={GlobalStyle.gruppeKort}>
+                  {gruppe.varer.map((vare, index) => (
+                    <VareRaekke
+                      key={vare.id}
+                      vare={vare}
+                      sidst={index === gruppe.varer.length - 1}
+                      onSkift={() => proev(() => skiftAfkrydset(vare.id, !vare.afkrydset))}
+                      onSlet={() => proev(() => sletFraListe(vare.id))}
+                    />
+                  ))}
+                </View>
               </View>
-            </View>
-          );
-        }}
-      />
-    </KeyboardAvoidingView>
+            );
+          }}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

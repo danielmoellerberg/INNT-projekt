@@ -62,11 +62,11 @@ export default function MadplanScreen({ navigation }) {
         </View>
 
         <View style={GlobalStyle.kommerSnartKnapper}>
-          {/* Indkøbslisten virker i dag. Den ligger i Tilbud-fanens stack, og initial: false
-              lægger Tilbud nedenunder, så tilbage-knappen på indkøbslisten fører til Tilbud. */}
+          {/* Indkøbslisten virker i dag. Den er første skærm i Indkøbsliste-fanen, så navigate
+              skifter fane og viser listen. */}
           <PrimaryButton
             label="Gå til indkøbsliste"
-            onPress={() => navigation.navigate("Tilbud", { screen: "Indkoebsliste", initial: false })}
+            onPress={() => navigation.navigate("Indkøbsliste", { screen: "Indkoebsliste" })}
           />
           {/* Fake door: efter tryk vises et flueben, og knappen kan ikke trykkes igen */}
           <SecondaryButton

@@ -370,7 +370,7 @@ export const GlobalStyle = StyleSheet.create({
     color: Colors.cashback,
   },
 
-  // OfferCard: ét tilbud med pris, cashback-mærke og en knap til indkøbslisten
+  // OfferCard: ét tilbud med pris, førpris, besparelse og en knap til indkøbslisten
   offerCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -392,16 +392,6 @@ export const GlobalStyle = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.sm,
     paddingTop: Spacing.xs,
-  },
-  cashbackBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.cashbackSoft,
-  },
-  cashbackBadgeTekst: {
-    ...Typography.caption,
-    color: Colors.cashback,
   },
   // 44 x 44 er Apples mindste anbefalede trykflade
   offerCardTilfoejKnap: {
@@ -843,10 +833,6 @@ export const GlobalStyle = StyleSheet.create({
     ...Typography.headline,
     color: Colors.text,
   },
-  cashbackBannerBonus: {
-    ...Typography.subheadline,
-    color: Colors.cashback,
-  },
   vareKort: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
@@ -877,10 +863,6 @@ export const GlobalStyle = StyleSheet.create({
   vareAntal: {
     ...Typography.footnote,
     color: Colors.textSecondary,
-  },
-  vareCashback: {
-    ...Typography.footnote,
-    color: Colors.cashback,
   },
   varePris: {
     ...Typography.body,
@@ -1046,15 +1028,26 @@ export const GlobalStyle = StyleSheet.create({
     color: Colors.textTertiary,
     textDecorationLine: "line-through",
   },
-  cashbackBadgeStor: {
+  // "Spar 4,95 kr." på et tilbud. Grøn, fordi ravfarve er forbeholdt cashback.
+  sparMaerkeStor: {
     paddingHorizontal: 10,
     paddingVertical: Spacing.xs,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.cashbackSoft,
+    backgroundColor: Colors.primarySoft,
   },
-  cashbackBadgeStorTekst: {
+  sparMaerkeStorTekst: {
     ...Typography.footnote,
-    color: Colors.cashback,
+    color: Colors.primary,
+  },
+  sparMaerke: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.primarySoft,
+  },
+  sparMaerkeTekst: {
+    ...Typography.caption,
+    color: Colors.primary,
   },
 
   // ---------- ScanScreen ----------
@@ -1254,19 +1247,10 @@ export const GlobalStyle = StyleSheet.create({
   prisInputFejl: {
     borderColor: Colors.danger,
   },
-  // Låst pris på varer med cashback: samme bredde som feltet, men kan ikke rettes
   // Bonens total med hængelås (cashback beregnes af den, så den kan ikke rettes)
   totalLaast: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xs,
-  },
-  prisLaast: {
-    width: 96,
-    height: 44,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
     gap: Spacing.xs,
   },
   // 44 x 44 er Apples mindste anbefalede trykflade

@@ -1,0 +1,182 @@
+{
+  "t01": {
+    "vare": "Hakket grisekød 8-12% 300 g",
+    "butik": "Netto",
+    "pris": 12,
+    "foerPris": 18,
+    "kategori": "kød/protein",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t02": {
+    "vare": "Yoghurt naturel 1 l",
+    "butik": "Netto",
+    "pris": 12,
+    "foerPris": 17,
+    "kategori": "mejeri",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t03": {
+    "vare": "Frilandsæg 8 stk.",
+    "butik": "Netto",
+    "pris": 20,
+    "foerPris": 26,
+    "kategori": "mejeri",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t04": {
+    "vare": "Rugbrød 500 g",
+    "butik": "Netto",
+    "pris": 15,
+    "foerPris": 22,
+    "kategori": "andet",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t05": {
+    "vare": "Formalet kaffe 400 g",
+    "butik": "Netto",
+    "pris": 35,
+    "foerPris": 49,
+    "kategori": "drikkevarer",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t06": {
+    "vare": "Hakket oksekød 8-12% 400 g",
+    "butik": "Rema 1000",
+    "pris": 25,
+    "foerPris": 35,
+    "kategori": "kød/protein",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t07": {
+    "vare": "Smør 200 g",
+    "butik": "Rema 1000",
+    "pris": 15,
+    "foerPris": 23,
+    "kategori": "mejeri",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t08": {
+    "vare": "Rugbrød 500 g",
+    "butik": "Rema 1000",
+    "pris": 10,
+    "foerPris": 18,
+    "kategori": "andet",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t09": {
+    "vare": "Æbler 1 kg",
+    "butik": "Rema 1000",
+    "pris": 15,
+    "foerPris": 20,
+    "kategori": "frugt/grønt",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t10": {
+    "vare": "Avocado 3 stk.",
+    "butik": "Føtex",
+    "pris": 22,
+    "foerPris": 30,
+    "kategori": "frugt/grønt",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t11": {
+    "vare": "Yoghurt naturel 1 l",
+    "butik": "Føtex",
+    "pris": 10,
+    "foerPris": 17,
+    "kategori": "mejeri",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t12": {
+    "vare": "Chips 90 g",
+    "butik": "Føtex",
+    "pris": 10,
+    "foerPris": 20,
+    "kategori": "snacks",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t13": {
+    "vare": "Cola 24 x 33 cl",
+    "butik": "Føtex",
+    "pris": 70,
+    "foerPris": 119,
+    "kategori": "drikkevarer",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t14": {
+    "vare": "Kyllingebryst 800 g",
+    "butik": "Føtex",
+    "pris": 49,
+    "foerPris": 69,
+    "kategori": "kød/protein",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t15": {
+    "vare": "Smør 200 g",
+    "butik": "Lidl",
+    "pris": 13,
+    "foerPris": 23,
+    "kategori": "mejeri",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t16": {
+    "vare": "Formalet kaffe 400 g",
+    "butik": "Lidl",
+    "pris": 45,
+    "foerPris": 59,
+    "kategori": "drikkevarer",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t17": {
+    "vare": "Cocktailtomater 500 g",
+    "butik": "Lidl",
+    "pris": 18,
+    "foerPris": 25,
+    "kategori": "frugt/grønt",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t18": {
+    "vare": "Sodavand 2 l",
+    "butik": "Lidl",
+    "pris": 12,
+    "foerPris": 18,
+    "kategori": "drikkevarer",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t19": {
+    "vare": "Overtrukne mandler 200 g",
+    "butik": "Lidl",
+    "pris": 30,
+    "foerPris": 39,
+    "kategori": "snacks",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  },
+  "t20": {
+    "vare": "Klementiner 1 kg",
+    "butik": "Lidl",
+    "pris": 13,
+    "foerPris": 18,
+    "kategori": "frugt/grønt",
+    "gyldig": "til 31. januar",
+    "ownerId": "yW4cUFjqegZMHB1XUoovYUOszlz2"
+  }
+}

@@ -40,3 +40,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Tilbudsaviser brugt som inspiration til testdata - må aldrig på GitHub (ophavsret)
+testdata_kilder/

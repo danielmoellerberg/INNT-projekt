@@ -21,18 +21,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ref, onValue, push, update, remove } from "firebase/database";
 
 import { rtdb } from "../database/firebase";
-import { findTilbud } from "../services/offers";
 
 // Faste nøgler til AsyncStorage (mønster fra 08)
 const BUTIKKER_NOEGLE = "VALGTE_BUTIKKER";
 const INDSTILLINGER_NOEGLE = "INDSTILLINGER";
 const STANDARD_INDSTILLINGER = { nyeTilbud: true, paamindScan: true };
 
-// ---------- Cashback-modellen ----------
+// ---------- Cashback-modellen (value capture pivot) ----------
 // Pivot efter vores Think Out Loud-test: brugerne forstod ikke, hvorfor de kun fik cashback
 // på enkelte varer fra mærkernes tilbud, og de fleste boner gav 0 kr. Nu får brugeren altid
-// en lille procentdel af hele bonens total (basis), ligesom cashback på et betalingskort.
-// Sponsorerede tilbud fra mærkerne i offers/ kan give ekstra cashback oveni (bonus).
+// 0,5 % af hele bonens total, ligesom cashback på et betalingskort. Der er INGEN cashback på
+// enkelte varer og ingen bonus fra tilbud. Tilbud er almindelige tilbud fra tilbudsaviserne.
 // Kvitteringer gemt før pivoten beholder deres gamle cashback - beregningen gælder kun nye.
 export const CASHBACK_SATS = 0.005; // 0,5 % af bonens total
 // Satsen som tekst til skærmene, fx "0,5 %"
@@ -123,7 +122,8 @@ export function AppProvider({ user, profil, children }) {
   }, [user]);
 
   // Lyt på tilbud fra leverandørerne: offers/. Alle indloggede må læse dem (se database.rules.json).
-  // Et tilbud har felterne: ownerId, vare, butik, pris, foerPris, cashback, kategori og gyldig.
+  // Et tilbud har felterne: ownerId, vare, butik, pris, foerPris, kategori og gyldig.
+  // Det er almindelige tilbud fra butikkernes tilbudsaviser (testdata i prototypen).
   useEffect(() => {
     if (!user) {
       setTilbud([]);
@@ -204,24 +204,11 @@ export function AppProvider({ user, profil, children }) {
     hentPraeferencer();
   }, []);
 
-  // Ekstra cashback (bonus) på én vare fra et sponsoreret tilbud i offers/.
-  // Bonussen gives per stk., så 2 stk. af en vare med tilbud giver dobbelt bonus.
-  function bonusForVare(vare) {
-    const match = findTilbud(tilbud, vare.navn);
-    return match ? tilOere(match.cashback * vare.antal) : 0;
-  }
-
-  // Beregner cashback for hele bonen:
-  // - basis: CASHBACK_SATS af AI'ens aflæste total (aiTotal), afrundet til hele øre.
-  //   Vi bruger AI'ens total og ikke de priser, brugeren kan rette, så man ikke kan få mere
-  //   cashback ved at skrive højere priser.
-  // - bonus: summen af ekstra cashback fra sponsorerede tilbud på bonens varer.
-  // Returnerer også varerne med deres bonus, så skærmene kan vise, hvilke varer gav ekstra.
-  function beregnCashback(aiTotal, varer) {
-    const varerMedBonus = varer.map((vare) => ({ ...vare, bonus: bonusForVare(vare) }));
-    const basis = tilOere(aiTotal * CASHBACK_SATS);
-    const bonus = tilOere(varerMedBonus.reduce((sum, v) => sum + v.bonus, 0));
-    return { basis: basis, bonus: bonus, cashback: tilOere(basis + bonus), varer: varerMedBonus };
+  // Beregner cashback for en bon: CASHBACK_SATS (0,5 %) af AI'ens aflæste total, afrundet
+  // til hele øre. Vi bruger AI'ens total og ikke de priser, brugeren kan rette, så man ikke
+  // kan få mere cashback ved at skrive højere priser. Eksempel: 312,50 kr. -> 1,56 kr.
+  function beregnCashback(aiTotal) {
+    return tilOere(aiTotal * CASHBACK_SATS);
   }
 
   // Tjekker en aflæst bon, før brugeren får den vist til godkendelse.
@@ -255,9 +242,8 @@ export function AppProvider({ user, profil, children }) {
   // afviser reglerne hele skrivningen, så en bon aldrig kan gemmes to gange.
   // Returnerer den gemte kvittering med id, så den kan åbnes bagefter.
   async function gemKvittering(kvittering) {
-    // Cashback beregnes ud fra AI'ens aflæste total og AI'ens varenavne og antal,
-    // som brugeren ikke kan ændre på godkendelsesskærmen
-    const beregning = beregnCashback(kvittering.aiTotal, kvittering.varer);
+    // Cashback beregnes kun ud fra AI'ens aflæste total, som er låst på godkendelsesskærmen
+    const cashback = beregnCashback(kvittering.aiTotal);
     const aftryk = lavAftryk(kvittering.butik, kvittering.dato, kvittering.aiTotal);
 
     const nyKvittering = {
@@ -265,13 +251,13 @@ export function AppProvider({ user, profil, children }) {
       dato: kvittering.dato,
       // Total er summen af de godkendte varer, så den passer, hvis brugeren har slettet en vare.
       // Den bruges til forbrug på Hjem, ikke til cashback.
-      total: tilOere(beregning.varer.reduce((sum, v) => sum + v.pris, 0)),
+      total: tilOere(kvittering.varer.reduce((sum, v) => sum + v.pris, 0)),
       aiTotal: kvittering.aiTotal, // totalen, som AI'en læste den på bonen (låst)
-      // Fordelingen gemmes, så Kvittering-skærmen kan vise basis og bonus hver for sig
-      cashbackBasis: beregning.basis,
-      cashbackBonus: beregning.bonus,
-      cashback: beregning.cashback,
-      varer: beregning.varer,
+      // cashbackBasis er 0,5 % af aiTotal. Den gemmes ved siden af cashback, så databasereglerne
+      // kan tjekke beløbet, og så skærmene kan kende en kvittering fra efter pivoten.
+      cashbackBasis: cashback,
+      cashback: cashback,
+      varer: kvittering.varer,
       aftryk: aftryk,
       aflaestAfAI: true, // så vi senere kan se, at varerne er aflæst af AI og godkendt af brugeren
     };
@@ -293,7 +279,7 @@ export function AppProvider({ user, profil, children }) {
   }
 
   // ---------- Indkøbslisten (users/{uid}/indkoebsliste) ----------
-  // Hver vare har: navn, butik (kæde), pris, cashback, afkrydset og tilfoejet (tidspunkt).
+  // Hver vare har: navn, butik (kæde), pris, gyldig, afkrydset og tilfoejet (tidspunkt).
 
   // Tilføjer et tilbud fra offers/. Tilbuddets id bruges som nøgle (update), så samme tilbud
   // ikke kommer på listen to gange (mønster fra 05).
@@ -302,8 +288,7 @@ export function AppProvider({ user, profil, children }) {
       navn: etTilbud.vare,
       butik: etTilbud.butik,
       pris: etTilbud.pris,
-      cashback: etTilbud.cashback || 0,
-      gyldig: etTilbud.gyldig || null, // fx "til søndag", vises under varen
+      gyldig: etTilbud.gyldig || null, // fx "til 31. januar", vises under varen
       afkrydset: false,
       tilfoejet: Date.now(),
     });
@@ -316,7 +301,6 @@ export function AppProvider({ user, profil, children }) {
       navn: navn,
       butik: "",
       pris: 0,
-      cashback: 0,
       afkrydset: false,
       tilfoejet: Date.now(),
     });
@@ -343,12 +327,11 @@ export function AppProvider({ user, profil, children }) {
     await update(ref(rtdb), sletninger);
   }
 
-  // Flytter en vare til en billigere butik: butik, pris og cashback skiftes til tilbuddets
+  // Flytter en vare til en billigere butik: butik, pris og gyldighed skiftes til tilbuddets
   async function flytVare(id, etTilbud) {
     await update(ref(rtdb, `users/${user.uid}/indkoebsliste/${id}`), {
       butik: etTilbud.butik,
       pris: etTilbud.pris,
-      cashback: etTilbud.cashback || 0,
       gyldig: etTilbud.gyldig || null,
     });
   }
